@@ -461,6 +461,61 @@ is internally sheared relative to its neighbours; a fresh, live
 `astap_cli` run against this exact frame today reproduces the same wrong
 answer) are recorded in full in `docs/superpowers/2026-08-14-m3-first-real-frame.md`.
 
+### Re-run 2026-08-27: four gross errors, and a third arbitrated to ASTAP
+
+The full corpus was re-run on 2026-08-27 (10,376 frames, same gate constants).
+The headline figures reproduce exactly -- **10,369 solved (99.93%), median
+0.541", p99 3.316"**, the same seven failures (4 `NO_QUAD_MATCH`, 2
+`TOO_FEW_STARS`, 1 `LOW_CONFIDENCE`). **The gate still FAILS, now on four
+frames rather than two:**
+
+| separation | frame | status |
+|---:|---|---|
+| **52.57"** | `library/_probe/.../2026-07-30_19-38-19_O_60.00s_..._0001` | **ASTAP's error** -- arbitrated below |
+| 40.90" | `DWARFIII/C_92/.../failed_C 92_15s60_..._20250523-183554357` | **undetermined** |
+| 38.22" | `SV405CC/NGC_3372/.../0444.fits` | ASTAP's error (arbitrated 2026-08-22) |
+| 30.69" | `SV405CC/NGC_3372/.../0050.fits` | ASTAP's error (arbitrated at M3) |
+
+The two new entries are not a regression: the 52.57" frame is an ATR585M
+`_probe` exposure and the 40.90" one is a DWARFIII frame the capture pipeline
+itself named `failed_`. Neither was in the earlier corpus slices that produced
+the two-error count.
+
+**The 52.57" frame: ASTAP's error, on four independent signals.**
+
+`PROBE_az195_alt60`, a 60 s pointing-check exposure. ASTAP's recorded centre is
+219.62999, -66.12977; psolve returns 219.59469, -66.13282.
+
+1. **Reprojection, with controls.** Gaia stars at G<=9 projected through each
+   candidate WCS and centroided against real flux: **psolve 19/38 (50%), ASTAP
+   1/40 (2.5%)**, a 20:1 ratio that holds at every magnitude cut. Two control
+   frames from the same probe session, where the two tools agree to under 0.1",
+   score **96% and 100%** under the same metric -- so a correct WCS scores near
+   perfect here and the arbiter discriminates rather than favouring psolve by
+   construction. psolve's own 50% reflects a genuinely hard frame, not a
+   marginal solve.
+2. **Live `astap_cli`, run against this exact frame on 2026-08-27**, reproduces
+   its recorded answer to 0.9" (`CRVAL1 = 219.63025`). The database row is not
+   stale; ASTAP consistently produces this result. (Note this is a capability
+   the earlier two arbitrations lacked and explicitly caveated -- `astap_cli`
+   is installed on this machine now.)
+3. **ASTAP's own sidecar contradicts itself.** The `.ini` it wrote carries
+   `PLTSOLVD=T` **and** `ERROR=Not enough stars.` **and** a scale warning, in
+   the same file. It flagged the frame as problematic while reporting success
+   -- which is the precise failure mode this project's reason codes exist to
+   avoid.
+4. **Re-hinting psolve at ASTAP's own centre does not move it.** Given
+   219.63025, -66.12978 as the hint with a 1 degree radius, psolve walks
+   **52.80" away from the hint it was given** and lands **0.17"** from its
+   original unhinted answer.
+
+**The 40.90" frame is left undetermined**, deliberately. The same arbiter gives
+psolve 48% against ASTAP's 21% -- 2.3:1, favouring psolve but far below the
+20:1 of the frame above, and both scores sit well under the 96-100% a clean
+frame produces. That is not enough signal to call, and the frame is one the
+capture pipeline had already marked `failed_`. It is recorded as an open
+disagreement, not as a third ASTAP error.
+
 Both facts are reported, deliberately, side by side: **the gate fails on
 its own terms** (psolve disagreed with ASTAP by more than the specified
 bar, on one frame out of 9495), **and the disagreement on that one frame is
