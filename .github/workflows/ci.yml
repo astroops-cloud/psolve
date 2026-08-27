@@ -35,7 +35,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: cargo clippy --workspace --all-targets -- -D warnings
 
   test:
@@ -45,7 +45,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Reason 1 above. If this ever prints 0, the suite is running as root and
       # fits_update.rs's fsync-failure test cannot do its job.
@@ -63,13 +63,7 @@ jobs:
       - name: the synthetic demo solves with no index and no rig data
         run: ./scripts/demo.sh
 
-  package:
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: cargo build --release
-      - uses: actions/upload-artifact@v4
-        with:
-          name: psolve-linux-amd64
-          path: target/release/psolve
+  # Packaging lives entirely in release.yml, which builds the .deb, the Linux
+  # and macOS binaries and the Windows .exe on a v* tag and attaches them to the
+  # Release. A `package` job here would duplicate it and produce an artifact
+  # that expires rather than one anyone can download.

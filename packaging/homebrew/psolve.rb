@@ -53,9 +53,13 @@ class Psolve < Formula
   end
 
   test do
-    # `psolve --help` exits 0 and prints the version banner. Note that
-    # `psolve --version` is NOT a recognised command -- it prints
-    # "unknown command" and exits 2 -- so do not "fix" this test to use it.
+    # `psolve --help` exits 0 and prints the version banner.
+    #
+    # This comment used to warn that `psolve --version` was NOT a recognised
+    # command and exited 2. That stopped being true on 2026-08-24 and the
+    # warning was left behind. Measured 2026-08-27: `psolve --version` prints
+    # `psolve <version> (<build>)` and exits 0. Either check is valid; --help
+    # is kept because it also exercises the banner.
     assert_match "psolve #{version}", shell_output("#{bin}/psolve --help")
 
     # A solve against paths that do not exist must refuse cleanly rather than

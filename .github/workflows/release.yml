@@ -1,12 +1,17 @@
-# Attach binaries to a GitHub Release on a v* tag.
+# Build every distributable artifact on a v* tag and attach them to the
+# GitHub Release.
 #
-# ci.yml's `package` job uploads a CI artifact, which expires and is not a
-# release. This is the one that produces something a user can download.
+# THE ASYMMETRY IS THE POINT, and it is stated rather than buried:
 #
-# NO WINDOWS BINARY IS ATTACHED, deliberately. The .exe is cross-compiled with
-# mingw-w64 and has never been executed -- no Wine, no Windows runner. Attaching
-# it to a release would state more confidence than exists. See
-# packaging/README.md for the platform-coverage table.
+#   Linux .deb        built, INSTALLED with dpkg -i, and the installed binary run
+#   Linux binary      built and run
+#   macOS binary      built and run (and the full suite runs on macos-latest in ci.yml)
+#   Windows .exe      built and NEVER RUN -- no Wine, no Windows runner
+#
+# An untested binary that looks exactly like a tested one is the defect shape
+# this project keeps paying for, so the Windows job asserts everything that CAN
+# be checked without executing it, and the release notes say plainly that it is
+# unverified. See packaging/README.md.
 
 name: release
 
@@ -18,7 +23,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  binaries:
     strategy:
       fail-fast: false
       matrix:
@@ -29,40 +34,133 @@ jobs:
             asset: psolve-macos-arm64
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-
-      # A release binary that has never run is not a release binary. This is
-      # the same reason the .deb job installs its own artifact.
+      - uses: actions/checkout@v7
       - run: cargo build --release
+
+      # A release binary that has never run is not a release binary.
       - name: the binary runs
-        run: ./target/release/psolve --help
+        run: ./target/release/psolve --version
 
       - run: mv target/release/psolve "${{ matrix.asset }}"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.asset }}
           path: ${{ matrix.asset }}
 
-  publish:
-    needs: build
+  deb:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+
+      # Asserted rather than assumed: a silently-wrong architecture installs
+      # and then fails at exec time.
+      - name: runner is amd64
+        run: |
+          arch=$(dpkg --print-architecture)
+          echo "dpkg architecture: $arch"
+          test "$arch" = "amd64"
+
+      - run: cargo install cargo-deb --locked --version '^2'
+      - run: cargo build --release -p psolve-cli
+      - run: ./target/release/psolve --version
+      - name: build the package
+        run: cargo deb -p psolve-cli --no-build --output "psolve_${GITHUB_REF_NAME}_amd64.deb"
+
+      # Prove the package is installable and that the binary inside it actually
+      # runs, rather than shipping a .deb only dpkg-deb has ever opened. This is
+      # the strongest verification in the project.
+      - name: install it and run what was installed
+        run: |
+          sudo dpkg -i ./psolve_${GITHUB_REF_NAME}_amd64.deb
+          psolve --version
+          dpkg -L psolve
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: psolve-deb
+          path: psolve_*_amd64.deb
+
+  windows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # The -gnu target rather than -msvc: -msvc needs the Microsoft linker and
+      # Windows SDK, unavailable here. The practical difference for psolve is
+      # nil -- no C dependencies, and both memmap2 and rayon support it.
+      #
+      # KNOWN BEHAVIOUR DIFFERENCE, deliberately shipped and documented: on
+      # Windows fits_update::same_directory returns None unconditionally (std
+      # has no portable device+inode API off Unix), so one of the three
+      # .psolve-readonly ancestor chains is permanently unavailable and the
+      # -update safety model is weaker there. The canonical chain -- the
+      # module's one unconditional guarantee -- is unaffected.
+      - name: mingw-w64 toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64 zip file
+          rustup target add x86_64-pc-windows-gnu
+          mkdir -p .cargo
+          cat >> .cargo/config.toml <<'CARGOCFG'
+          [target.x86_64-pc-windows-gnu]
+          linker = "x86_64-w64-mingw32-gcc"
+          ar = "x86_64-w64-mingw32-ar"
+          CARGOCFG
+
+      - run: cargo build --release -p psolve-cli --target x86_64-pc-windows-gnu
+
+      # Nothing here can execute the binary, so assert what CAN be checked:
+      # that it exists and is a PE32+ image. A mis-targeted build fails this
+      # loudly rather than shipping an ELF named .exe.
+      - name: it is a PE32+ image, not an ELF named .exe
+        run: |
+          test -f target/x86_64-pc-windows-gnu/release/psolve.exe
+          file target/x86_64-pc-windows-gnu/release/psolve.exe | tee /dev/stderr | grep -q "PE32+"
+
+      - name: stage the zip
+        run: |
+          stage="psolve-${GITHUB_REF_NAME}-x86_64-windows"
+          mkdir -p "$stage"
+          cp target/x86_64-pc-windows-gnu/release/psolve.exe "$stage/"
+          cp README.md LICENSE docs/astap-compat.md docs/index-building.md docs/data-licence.md "$stage/"
+          zip -r "${stage}.zip" "$stage"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: psolve-windows
+          path: psolve-*-x86_64-windows.zip
+
+  publish:
+    needs: [binaries, deb, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
       - run: ls -l dist
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: dist/*
           body: |
-            See CHANGELOG.md for what is in this release.
+            See CHANGELOG.md for what is in this release, including its known limits.
 
             **psolve needs a star index and none ships here.** Build one from a
             Gaia DR3 mirror with `psolve index build` -- see docs/index-building.md.
             An index is CC BY-NC 3.0 IGO, which this project's MIT licence does
             not cover.
 
+            **What was verified, and what was not:**
+
+            - `.deb` -- built, installed with `dpkg -i`, and the installed
+              binary executed by CI.
+            - Linux and macOS binaries -- built and executed by CI. The full
+              test suite also runs on both platforms on every push.
+            - Windows `.exe` -- **built but NEVER EXECUTED.** There is no
+              Windows runner and no Wine in CI. It is asserted to be a PE32+
+              image and nothing more. Treat it as unverified until you have run
+              it. It also has a weaker `-update` safety model than Unix: one of
+              the three `.psolve-readonly` ancestor chains is unavailable there.
+
             The macOS binary is unsigned and unnotarised; Gatekeeper will
-            quarantine it. No Windows binary is attached: it is cross-compiled
-            and never executed by CI.
+            quarantine it.
