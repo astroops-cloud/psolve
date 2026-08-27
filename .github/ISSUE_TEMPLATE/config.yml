@@ -1,0 +1,12 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/astroops-cloud/psolve/security/advisories/new
+    about: >
+      Report privately instead of opening an issue. psolve parses untrusted
+      FITS by design -- see SECURITY.md for what is in scope.
+  - name: Building an index
+    url: https://github.com/astroops-cloud/psolve/blob/main/docs/index-building.md
+    about: >
+      psolve needs a star index built from a Gaia DR3 mirror, and none ships
+      with the binary. Start here before filing "it will not solve anything".

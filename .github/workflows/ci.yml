@@ -1,0 +1,75 @@
+# psolve CI.
+#
+# TWO THINGS THAT ARE NOT INCIDENTAL:
+#
+# 1. These are VM runners, not container jobs. `fits_update.rs` stages a
+#    permission failure with `chmod 0o311`, which denies root nothing -- under
+#    root it cannot arrange the condition it exists to exercise, and it panics
+#    naming root rather than passing vacuously. GitHub's VM runners run as an
+#    ordinary user; a `container:` job would run as root and break it. The
+#    `id -u` step below fails loudly if that ever stops being true.
+#
+# 2. A green pipeline proves less than it looks. No runner here has the rig
+#    data (`~/astroops/data`, `~/astroops/library`), so four test files skip
+#    themselves. Green means "compiles, clippy-clean, data-independent tests
+#    pass" -- NOT that the agreement run holds, that blind solving still works
+#    against a real index, or that sidecar bytes still match astap_cli. Those
+#    are measured locally against the rig.
+#    `crates/psolve-cli/tests/rig_data_dependence.rs` is what keeps that gap
+#    from widening silently.
+#
+# There is deliberately no `cargo fmt --check` gate. See CONTRIBUTING.md.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Reason 1 above. If this ever prints 0, the suite is running as root and
+      # fits_update.rs's fsync-failure test cannot do its job.
+      - name: the suite must not run as root
+        run: |
+          uid=$(id -u)
+          echo "uid=$uid"
+          test "$uid" -ne 0
+
+      - run: cargo test --workspace
+
+      # The demo is the README's first runnable block. If it breaks, the first
+      # thing a stranger does with this repo breaks, so it is a CI job rather
+      # than something checked by hand at release time.
+      - name: the synthetic demo solves with no index and no rig data
+        run: ./scripts/demo.sh
+
+  package:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo build --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: psolve-linux-amd64
+          path: target/release/psolve

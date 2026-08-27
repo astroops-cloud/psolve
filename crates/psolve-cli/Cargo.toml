@@ -1,0 +1,52 @@
+[package]
+name = "psolve-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Plate solver: FITS bytes in, a verified TAN WCS out. ASTAP-CLI compatible."
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[[bin]]
+name = "psolve"
+path = "src/main.rs"
+
+[dependencies]
+psolve-index = { path = "../psolve-index" }
+psolve-core = { path = "../psolve-core" }
+rayon = "1"
+
+# Debian packaging, consumed by `cargo deb` in `.gitlab-ci.yml`.
+#
+# The package ships the BINARY ONLY. It deliberately carries no star index: a
+# built index is derived from Gaia DR3 and is CC BY-NC 3.0 IGO, which the MIT
+# licence on this code does not cover, and the smallest useful one is 0.23 GB.
+# psolve is useless without an index, so the description says so rather than
+# letting an installer find out. See docs/data-licence.md, docs/index-building.md.
+[package.metadata.deb]
+name = "psolve"
+maintainer = "NRF <neil@asdf.systems>"
+copyright = "2026, NRF. MIT licensed."
+license-file = ["../../LICENSE", "0"]
+extended-description = """\
+psolve is a plate solver: FITS bytes in, a verified TAN WCS out. One static \
+binary, no runtime, built for headless automation. It accepts astap_cli's \
+argument grammar and reproduces its .ini/.wcs sidecar formats, so it is a \
+drop-in replacement at that interface.
+
+This package contains the binary only. A star index is REQUIRED and is not \
+included: build one with `psolve index build` from a Gaia DR3 mirror. Indexes \
+are licensed CC BY-NC 3.0 IGO, which this package's MIT licence does not \
+cover. See /usr/share/doc/psolve/."""
+section = "science"
+priority = "optional"
+assets = [
+    ["target/release/psolve", "usr/bin/", "755"],
+    ["../../README.md", "usr/share/doc/psolve/README.md", "644"],
+    ["../../docs/astap-compat.md", "usr/share/doc/psolve/astap-compat.md", "644"],
+    ["../../docs/index-building.md", "usr/share/doc/psolve/index-building.md", "644"],
+    ["../../docs/data-licence.md", "usr/share/doc/psolve/data-licence.md", "644"],
+]
