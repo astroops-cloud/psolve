@@ -792,7 +792,7 @@ builds an index from the catalogue it came from, and solves it:
 ```
 
 Solving your own frames needs a real index; see
-[`docs/index-building.md`](docs/index-building.md).
+[`docs/index-building.md`](../../index-building.md).
 ````
 
 - [ ] **Step 6: Commit**
