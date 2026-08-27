@@ -1,0 +1,24 @@
+# Git must not translate line endings anywhere in this repository.
+#
+# The reference sidecars under crates/psolve-cli/tests/fixtures/ are byte-exact
+# copies of real astap_cli output, and sidecar_ini.rs / sidecar_wcs.rs compare
+# psolve's own output against them byte for byte. That is the whole
+# ASTAP-compatibility guarantee.
+#
+# Git's default core.autocrlf=true on Windows rewrites their LF to CRLF on
+# checkout, so the tests then compare against fixtures that no longer match
+# what astap_cli actually wrote -- and a passing run would be meaningless
+# rather than merely absent. Measured 2026-08-27 on a windows-latest runner:
+# two sidecar_ini tests failed with \r\n on the right-hand side.
+#
+# `-text` disables all EOL conversion for every path. It is deliberately
+# repo-wide rather than fixture-scoped: nothing here wants CRLF, and a
+# narrower rule would leave the next byte-exact fixture unprotected.
+* -text
+
+# Belt and braces for the binary artefacts, so no future setting can touch them.
+*.psidx binary
+*.psqidx binary
+*.gz binary
+*.wcs binary
+*.ini binary
