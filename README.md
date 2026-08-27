@@ -69,7 +69,7 @@ wrong, please file an issue and I will correct it.
 | **Interface** | GUI and CLI | CLI only, no GUI, no runtime |
 | **Star database** | Prebuilt all-sky databases, downloadable | You [build it yourself](docs/index-building.md#which-depth-do-you-need-start-here) from a Gaia DR3 mirror — you pick the depth and the declination cut |
 | **Distortion** | SIP | **TAN only, no distortion terms** ([measured: this data wants one](docs/superpowers/2026-08-27-distortion-signal.md)) |
-| **Platforms** | Windows, Linux, macOS — all field-proven | Linux, macOS **and Windows** all built and tested by CI; but **no human has run the Windows or Linux build** |
+| **Platforms** | Windows, Linux, macOS — all field-proven | Linux, macOS **and Windows** all built and tested by CI, and all three benchmarked on the same real frames; but **no human has run the Windows or Linux build** |
 | **Field use** | Years, thousands of setups | One observatory, one machine, 14 days |
 | **Sidecars** | `.ini` / `.wcs`, header `-update` | Byte-identical `.ini` / `.wcs`, same `-update` |
 | **Machine output** | Sidecars and exit codes | Sidecars *plus* structured JSON: WCS, star counts, per-stage timings, fit residuals |
@@ -92,9 +92,43 @@ the first time, driven over SSH by Claude Code, against 75 real frames with
 science frames it solved **93% against ASTAP's 76%** and was 5.5x faster; on
 15-second pointing probes it solved **0 of 30** where ASTAP solved 26. Those
 same 30 frames were then re-run on the macOS workstation as a control: **0 of
-30 again, same reason code, against ASTAP's 26 again** -- so the gap is a
-property of psolve and of those frames, not of Windows. **No
-human has yet used psolve on Windows interactively.**
+30 again, same reason code, against ASTAP's 26 again** -- so the gap was a
+property of psolve and of those frames, not of Windows.
+
+That gap has since been **closed**. The probes were mis-pointed by 18.8-19.5
+degrees against a 1.66 degree search radius -- every hinted rung was searching
+the wrong sky, and no amount of widening the radius fixed it
+([elimination table](docs/superpowers/2026-08-27-blind-fallback.md)). psolve
+now falls back to a **blind search** when the hinted ladder is exhausted and a
+`.psqidx` is available, which recovers **24 of the 26** frames ASTAP solved,
+with no change to any frame that already solved. **No human has yet used
+psolve on Windows interactively** -- every run so far was driven by Claude
+Code over SSH.
+
+Those 26 frames were then run on **all three platforms** -- same frames, same
+all-sky index, same source tree -- as the first three-way comparison this
+project has made ([detail](docs/superpowers/2026-08-27-blind-fallback.md#three-system-measurement-2026-08-27)):
+
+| role | CPU | OS | solved | ms/frame |
+|---|---|---|---|---|
+| workstation | Apple M5 Max, 18C | macOS (arm64) | **24/26** | 6,326 |
+| compute host | Ryzen 9 9950X3D, 16C/32T | Arch (x86-64) | **24/26** | 10,010 |
+| capture host | Intel i3-8109U, 2C/4T | Win 11 Pro | **24/26** | 35,143 |
+
+**The same 24 frames on every platform.** Three architectures and three
+toolchains agreeing frame-for-frame is the result worth having; the timing
+spread is not, and two caveats go with it. The Windows binary was
+**cross-compiled** (`x86_64-pc-windows-gnu`) because the capture host has no
+Rust toolchain -- releases are built natively with msvc on `windows-latest`, so
+this is a real measurement of a slightly different binary. And the Linux/macOS
+ordering is the reverse of what core count predicts, for reasons **this project
+has not established** and is not going to guess at in a README.
+
+The 35 s/frame figure is the one to plan against, not the workstation's 6.3 s:
+the capture host is where capture software calls psolve mid-sequence. That cost
+is only ever paid on a frame that already failed every cheaper rung -- the
+alternative is no solve, not a fast one -- but it is long enough to be a real
+scheduling consideration.
 
 **Windows is where the drop-in replacement claim actually gets tested.** This
 project's ASTAP-compatible mode exists so that capture software can call psolve
@@ -121,8 +155,8 @@ refuse rather than risk your frames.
 
 **Reasons you should stay on ASTAP:** you want a GUI; you need distortion
 correction; you want a star database you can download instead of build; you are
-on Windows; you want a tool with a decade of other people having hit the bugs
-first. Any of those, and ASTAP is the right answer.
+on Windows and want a solver other humans have actually used there; you want a
+tool with a decade of other people having hit the bugs first. Any of those, and ASTAP is the right answer.
 
 psolve speaks ASTAP's own CLI grammar and writes its sidecar bytes exactly, so
 trying it costs a symlink — and going back costs the same symlink.
@@ -142,7 +176,8 @@ sample by reprojecting the catalogue through the fitted WCS and measuring flux
 at the predicted star positions — rather than counted on the tool's own say-so.
 
 **Frames ASTAP failed in production** ([method](docs/superpowers/2026-08-26-production-failure-benchmark.md)):
-the AstroOps deployment ran its 12,620-frame archive through ASTAP on the live
+the deployment this project came out of ran its 12,620-frame archive through
+ASTAP on the live
 ingest path and parked 1,088. On a stratified 184 of those, **psolve recovers
 72 (39.1%)** — 54% of the SVBONY SV405CC frames — in **369 s total**. Four of
 the 184 turned out to be **truncated files** rather than hard frames, which
@@ -219,29 +254,29 @@ the slow part, and is why the demo uses synthetic data instead.
 `psolve` also accepts `astap_cli`'s own single-dash argument grammar (`-f`,
 `-r`, `-fov`, `-ra`, `-spd`, `-d`, `-update`, …) and writes `astap_cli`'s
 own `.ini`/`.wcs` sidecar files and exit-code scheme, so anything that
-already shells out to `astap_cli` — Siril, N.I.N.A., or AstroOps itself —
+already shells out to `astap_cli` — Siril, N.I.N.A., or your own pipeline —
 can point at `psolve` with no change on its side. ASTAP mode is entered
 whenever `argv` contains `-f`.
 
-The two invocations AstroOps issues in production, with **one change beyond the
+The two invocations that deployment issues in production, with **one change beyond the
 binary name** — `-d` must point at a directory holding a psolve `.psidx` index,
 not at ASTAP's own star-database directory. ASTAP's `-d /home/user/astap` holds
 `d50_*.1476` files, which psolve cannot read:
 
 ```sh
-# AstroOps' first attempt. When the frame's header carries OBJCTRA/OBJCTDEC
+# The pipeline's first attempt. When the frame's header carries OBJCTRA/OBJCTDEC
 # (or decimal RA/DEC), psolve auto-detects it and this is an ordinary hinted
 # solve. When it does not -- sentinel/absent pointing -- psolve now solves
 # BLIND instead of refusing, auto-discovering the `.psqidx` blind-solve quad
-# index `~/astroops/data` also holds alongside the `.psidx`; see below.
-psolve -f <path>.fits -r 180 -fov 1.4770 -d ~/astroops/data -update
+# index the same directory holds alongside the `.psidx`; see below.
+psolve -f <path>.fits -r 180 -fov 1.4770 -d /path/to/index-dir -update
 
 # The hinted narrow-radius retry, issued when the first attempt fails.
 # -ra is HOURS (RA/15), -spd is SOUTH POLAR DISTANCE (dec + 90) -- both are
 # properties of THIS frame's commanded pointing, not constants. Substituting
 # another frame's path while leaving these as-is points the search at the
 # wrong sky and the solve correctly refuses.
-psolve -f <path>.fits -ra <ra_hours> -spd <dec_plus_90> -r 15 -fov 1.4770 -d ~/astroops/data -update
+psolve -f <path>.fits -ra <ra_hours> -spd <dec_plus_90> -r 15 -fov 1.4770 -d /path/to/index-dir -update
 ```
 
 Verified end to end, fresh scratch copies, `-update` included, re-run
@@ -255,7 +290,7 @@ placeholders above are placeholders.
 
 On this rig the first invocation also prints a radius warning -- `-fov 1.4770`
 implies 0.812°, the header implies 1.657° -- and proceeds on the
-header-derived value. That disagreement is a real property of AstroOps'
+header-derived value. That disagreement is a real property of that
 standard invocation on this optics set, not a psolve defect; see
 [`docs/astap-compat.md`](docs/astap-compat.md).
 
@@ -264,7 +299,7 @@ uses `DEC = -90.` as an "unset" sentinel — used to be solvable by ASTAP and
 not by psolve, which returned `NO_HINT` unconditionally. Given a `.psqidx`
 blind-solve quad index (native mode: `--quad-index <FILE>`; ASTAP-compatible
 mode: auto-discovered from `-d`/`-D` alongside the `.psidx`, no flag needed —
-the invocation above already gets it, since `~/astroops/data` holds both),
+the invocation above already gets it, when that directory holds both),
 psolve now searches the index's precomputed quad codes instead of refusing,
 and verifies any candidate against a multiplicity-corrected confidence gate
 before accepting it — a plain `NO_HINT` is safer than a confident wrong
