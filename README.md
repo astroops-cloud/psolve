@@ -44,7 +44,7 @@ wrong, please file an issue and I will correct it.
 |---|---|---|
 | **Scope** | Complete suite: solve, stack, photometry, annotate, analyse | Plate solving only |
 | **Interface** | GUI and CLI | CLI only, no GUI, no runtime |
-| **Star database** | Prebuilt all-sky databases, downloadable | You build it from a Gaia DR3 mirror — you pick the depth and the declination cut |
+| **Star database** | Prebuilt all-sky databases, downloadable | You [build it yourself](docs/index-building.md#which-depth-do-you-need-start-here) from a Gaia DR3 mirror — you pick the depth and the declination cut |
 | **Distortion** | SIP | **TAN only, no distortion terms** |
 | **Platforms** | Windows, Linux, macOS — all field-proven | Linux, macOS **and Windows** all built and tested by CI; but **no human has run the Windows or Linux build** |
 | **Field use** | Years, thousands of setups | One observatory, one machine, 14 days |
@@ -144,12 +144,18 @@ solves it:
 ./scripts/demo.sh
 ```
 
-It prints the solve JSON and exits non-zero if the frame did not solve. Solving
-your own frames needs a real index built from a Gaia DR3 mirror --
-[`docs/index-building.md`](docs/index-building.md) -- which is a much longer
-first step, and is why the demo does not use one. A built index is also
-CC BY-NC 3.0 IGO rather than MIT ([`docs/data-licence.md`](docs/data-licence.md)),
-which is why none ships here.
+It prints the solve JSON and exits non-zero if the frame did not solve.
+
+**Solving your own frames needs a real index, and you build it yourself.**
+Start with **[which depth do you need](docs/index-building.md#which-depth-do-you-need-start-here)**,
+which answers that from your field of view rather than leaving you to guess;
+[`docs/index-building.md`](docs/index-building.md) then has the whole
+procedure. An all-sky G≤14 index is 0.27 GB and builds in seconds -- the slow
+part is fetching the Gaia mirror, which is done once and is why the demo does
+not use a real index.
+
+A built index is also CC BY-NC 3.0 IGO rather than MIT
+([`docs/data-licence.md`](docs/data-licence.md)), which is why none ships here.
 
 ## Drop-in replacement for `astap_cli`
 

@@ -14,6 +14,74 @@ Nothing here is Rust. `scripts/fetch-gaia.sh` is a bash script deliberately
 kept out of `psolve` itself — downloading 701 GB is not the solver's job, and
 keeping it out means `psolve` carries no HTTP dependency.
 
+## Which depth do you need? Start here
+
+The depth you need is set by your **field of view**, not by your camera or your
+sky. A wide field always has enough catalogue stars; a narrow one in a sparse
+patch of sky can run the catalogue dry, and psolve then reports
+`INDEX_TOO_SHALLOW` rather than guessing.
+
+Measured 2026-08-27 against an all-sky G≤14 index (0.27 GB), stars returned for
+a disc of the given field diameter, across five regions from the sparsest sky to
+the galactic plane:
+
+| field ⌀ | Coma (sparsest) | N. celestial pole | Orion | Cygnus | Carina (densest) |
+|---|---:|---:|---:|---:|---:|
+| **1.5°** | 130 | 336 | 528 | 1,425 | 5,041 |
+| **1.0°** | 47 | 169 | 320 | 560 | 2,525 |
+| **0.25°** | **3** | **13** | 91 | 33 | 170 |
+
+Below about 0.5° in sparse sky the G≤14 index stops being adequate -- three
+stars is not a solve, it is a refusal. Above about 1° it is comfortable
+everywhere on the sky.
+
+### Recommendation by focal length
+
+Field diameter is what matters; focal length is a proxy that depends on your
+sensor. The rule below is anchored on one real rig -- a 243 mm scope giving a
+1.477° field, so roughly `focal length x field ⌀ ≈ 359 mm·deg` **for that
+sensor**. A larger sensor shifts every row toward longer focal lengths, so
+prefer the field-diameter column if you know it.
+
+| focal length | field ⌀ | build this | size (all-sky) |
+|---|---|---|---|
+| ≤ 400 mm | ≥ 0.9° | **G≤14** | 0.27 GB + 0.45 GB quads |
+| 400--700 mm | 0.5--0.9° | **G≤14** -- adequate except in the sparsest fields | as above |
+| 700--1400 mm | 0.25--0.5° | **G≤16** | ~1.2 GB |
+| ≥ 1400 mm | ≤ 0.25° | **G≤18** | ~4.8 GB |
+
+**Depth costs storage, not speed.** Records are stored brightest-first within
+each HEALPix cell, so a query reads the head of each cell's run and stops --
+it never touches the faint tail that makes a deep index large. Measured: 19x
+the records from G≤14 to G≤18 costs **7% of wall time and changes no answer**
+(`docs/superpowers/2026-08-25-index-depth.md`).
+
+So if you have the disk, building deeper than you need is cheap at query time.
+The one real cost of over-depth is that `--cat-limit` reaches fainter, and
+handing the solver stars your frame could never have detected measurably hurts
+matching -- use `--max-mag` to cap by magnitude rather than by count.
+
+### Then build it
+
+Everything you need is below, in order:
+
+1. [The source](#the-source) -- what Gaia DR3 publishes and how big it is.
+2. [Running `fetch-gaia.sh`](#running-fetch-gaiash) -- reduce it to a local
+   mirror once. **Fetch full-sky and deep** even if you only need a shallow
+   index today: the download time is identical either way (see
+   [Fetch-time cuts do not save download time](#fetch-time-cuts-do-not-save-download-time)),
+   and re-fetching later costs the whole 701 GB again.
+3. [Build your own index](#build-your-own-index) -- the `psolve index build`
+   invocation, with `--max-mag`, `--min-dec`/`--max-dec` and `--nside`.
+4. `psolve quad-index build --star-index <FILE> --out <FILE>` -- only if you
+   want **blind solving** (no pointing hint). It must be rebuilt whenever the
+   star index is, because the pair is checked by fingerprint and a mismatched
+   pair is refused.
+
+Measured on one machine, from an existing full-sky mirror: an all-sky G≤14
+star index takes **6.2 s** to build and its quad index **82.7 s**. The
+expensive step is the one-time fetch, not the build.
+
 ## The source
 
 Gaia DR3's `gaia_source` table is published as gzipped ECSV at
