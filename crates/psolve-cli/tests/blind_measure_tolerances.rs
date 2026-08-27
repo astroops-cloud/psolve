@@ -50,7 +50,22 @@ use psolve_core::quad;
 use psolve_core::solve::{CatalogStar, Outcome, SolveOptions};
 use psolve_index::quad_reader::QuadIndex;
 use psolve_index::reader::Index;
-use std::path::Path;
+
+/// Absolute path to something under the rig data root.
+///
+/// This was `concat!(env!("HOME"), ...)`, which resolves at COMPILE time and
+/// therefore (a) bakes one machine's home directory into the test binary and
+/// (b) fails to build at all on Windows, where the variable is `USERPROFILE`.
+/// Resolving at runtime compiles everywhere; where neither variable is set the
+/// path simply will not exist and the caller skips -- the same outcome as the
+/// rig data being absent, which is this file's existing convention.
+fn rig_path(rel: &str) -> std::path::PathBuf {
+    let home = std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .unwrap_or_else(|_| "/nonexistent-home".to_string());
+    std::path::PathBuf::from(format!("{home}{rel}"))
+}
+
 
 /// A broad sample: eleven real frames across ten different targets (not
 /// eleven exposures of the same field), all from the same rig (243mm focal
@@ -186,7 +201,7 @@ fn measure_frame(
     star_index: &Index,
     quad_index: &QuadIndex,
 ) -> Option<FrameStats> {
-    let full = Path::new(env!("HOME")).join("astroops/library").join(path);
+    let full = rig_path("").join("astroops/library").join(path);
     if !full.exists() {
         eprintln!("skipping {path}: not present");
         return None;
@@ -276,14 +291,14 @@ fn measure_frame(
 #[test]
 #[ignore]
 fn measure_shape_and_scale_separation() {
-    let psidx = Path::new(concat!(env!("HOME"), "/astroops/data/gaia-dr3-g16-dec45-nside64.psidx"));
-    let psqidx = Path::new(concat!(env!("HOME"), "/astroops/data/gaia-dr3-g16-dec45-nside64.psqidx"));
+    let psidx = rig_path("/astroops/data/gaia-dr3-g16-dec45-nside64.psidx");
+    let psqidx = rig_path("/astroops/data/gaia-dr3-g16-dec45-nside64.psqidx");
     if !psidx.exists() || !psqidx.exists() {
         eprintln!("skipping: fixtures absent");
         return;
     }
-    let star_index = Index::open(psidx).unwrap();
-    let quad_index = QuadIndex::open(psqidx, &star_index).unwrap();
+    let star_index = Index::open(&psidx).unwrap();
+    let quad_index = QuadIndex::open(&psqidx, &star_index).unwrap();
 
     let mut all_shape: Vec<(f64, bool)> = Vec::new();
     let mut all_scale: Vec<(f64, bool)> = Vec::new();

@@ -21,6 +21,22 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+/// Absolute path to something under the rig data root.
+///
+/// This was `concat!(env!("HOME"), ...)`, which resolves at COMPILE time and
+/// therefore (a) bakes one machine's home directory into the test binary and
+/// (b) fails to build at all on Windows, where the variable is `USERPROFILE`.
+/// Resolving at runtime compiles everywhere; where neither variable is set the
+/// path simply will not exist and the caller skips -- the same outcome as the
+/// rig data being absent, which is this file's existing convention.
+fn rig_path(rel: &str) -> std::path::PathBuf {
+    let home = std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .unwrap_or_else(|_| "/nonexistent-home".to_string());
+    std::path::PathBuf::from(format!("{home}{rel}"))
+}
+
+
 fn bin() -> PathBuf {
     let mut p = std::env::current_exe().unwrap();
     p.pop();
@@ -67,11 +83,11 @@ fn run(args: &[&str]) -> RunResult {
 }
 
 fn g16_star_index() -> PathBuf {
-    PathBuf::from(concat!(env!("HOME"), "/astroops/data/gaia-dr3-g16-dec45-nside64.psidx"))
+    rig_path("/astroops/data/gaia-dr3-g16-dec45-nside64.psidx")
 }
 
 fn g16_quad_index() -> PathBuf {
-    PathBuf::from(concat!(env!("HOME"), "/astroops/data/gaia-dr3-g16-dec45-nside64.psqidx"))
+    rig_path("/astroops/data/gaia-dr3-g16-dec45-nside64.psqidx")
 }
 
 /// Real frame that already carries a genuine ASTAP solution in its own
@@ -80,10 +96,7 @@ fn g16_quad_index() -> PathBuf {
 /// this test's blind solve is checked against is read straight out of the
 /// header, not hand-transcribed.
 fn reference_frame() -> PathBuf {
-    PathBuf::from(concat!(
-        env!("HOME"),
-        "/astroops/library/eagle/lights/H/2026-07-29_22-47-02_H_120.00s_100g_1x1_0001_-10.00.fits"
-    ))
+    rig_path("/astroops/library/eagle/lights/H/2026-07-29_22-47-02_H_120.00s_100g_1x1_0001_-10.00.fits")
 }
 
 /// This frame's own real ASTAP-solved centre, transcribed from its header's
@@ -338,6 +351,9 @@ fn a_hint_plus_a_quad_index_still_takes_the_hinted_path() {
 /// never touching `~/astroops` itself), auto-discovered by
 /// `resolve_index_path`/`resolve_quad_index_path` exactly as a real `-d`
 /// directory would be.
+// Uses symlinks to point `-d` at the real index pair without copying ~1.5 GB;
+// creating them on Windows needs elevated privileges, so this is Unix-only.
+#[cfg(unix)]
 #[test]
 fn the_same_frame_solves_blind_through_astap_mode_and_agrees_with_native() {
     let Some((psidx, psqidx, frame)) = require_fixtures() else { return };

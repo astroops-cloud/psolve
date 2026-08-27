@@ -585,6 +585,9 @@ fn psolve_readonly_env_refuses_an_output_path() {
 /// An existing output file is canonicalized directly (not via its parent),
 /// so a sidecar reached through a symlinked directory still resolves to the
 /// tree it physically lives in -- and a marker there refuses.
+// Symlink creation on Windows needs elevated privileges, so this is Unix-only
+// like the other symlink tests in this file.
+#[cfg(unix)]
 #[test]
 fn an_existing_output_file_reached_through_a_symlink_resolves_to_its_real_tree() {
     let _g = lock();

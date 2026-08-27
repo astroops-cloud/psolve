@@ -46,13 +46,28 @@ wrong, please file an issue and I will correct it.
 | **Interface** | GUI and CLI | CLI only, no GUI, no runtime |
 | **Star database** | Prebuilt all-sky databases, downloadable | You build it from a Gaia DR3 mirror — you pick the depth and the declination cut |
 | **Distortion** | SIP | **TAN only, no distortion terms** |
-| **Platforms** | Windows, Linux, macOS — all field-proven | Linux and macOS built *and executed* by CI; Windows built, **never executed** |
+| **Platforms** | Windows, Linux, macOS — all field-proven | Linux and macOS built and tested by CI; Windows compiled and unit-tested by CI, but **never run by a human** |
 | **Field use** | Years, thousands of setups | One observatory, one machine, 14 days |
 | **Sidecars** | `.ini` / `.wcs`, header `-update` | Byte-identical `.ini` / `.wcs`, same `-update` |
 | **Machine output** | Sidecars and exit codes | Sidecars *plus* structured JSON: WCS, star counts, per-stage timings, fit residuals |
 | **Why a frame failed** | Exit code | **11 distinct reason codes** plus per-reason star-rejection counts |
 | **Deployment** | Install the application | One static binary, no runtime, no config |
 | **Licence** | Free — see its site | MIT (a built index is CC BY-NC 3.0 IGO, and is not MIT) |
+
+### Nobody has actually used psolve on Windows
+
+CI compiles it for Windows and runs the unit test suite there. That is the
+entire extent of it. **No human has installed psolve on a Windows machine,
+pointed it at a real frame, or run it during an imaging session.** The author
+does not use Windows.
+
+The same caveat applies more weakly to Linux: CI tests it, but every real frame
+this project has ever solved was solved on macOS. Machine-verified and
+field-tested are different claims, and this project has a lot of the first and
+one observatory's worth of the second, on one platform.
+
+If you run it on Windows, the maintainer would genuinely like to hear how it
+went -- that is a gap only a user can close.
 
 **Reasons you might actually want psolve:** you are automating a pipeline and
 want a machine-readable answer rather than a parsed log; you want to know *why*

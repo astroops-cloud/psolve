@@ -63,8 +63,10 @@ measured, not a claim about every rig.
 ### Known limits
 
 - Fits a TAN WCS with no distortion terms.
-- The Windows binary is cross-compiled and **never executed by CI** -- treat it
-  as unverified.
+- **Nobody has used psolve on Windows.** CI compiles it and runs the unit tests
+  there; no human has installed it on a Windows machine or pointed it at a real
+  frame. The author does not use Windows. Every real frame this project has
+  solved was solved on macOS.
 - Four test files skip themselves without real telescope data, so a green CI run
   proves less than it looks. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 - No MSRV is declared; it has not been measured.

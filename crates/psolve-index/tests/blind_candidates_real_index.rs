@@ -13,8 +13,23 @@
 
 use psolve_index::quad_reader::QuadIndex;
 use psolve_index::reader::Index;
-use std::path::Path;
 use std::time::Instant;
+
+/// Absolute path to something under the rig data root.
+///
+/// This was `concat!(env!("HOME"), ...)`, which resolves at COMPILE time and
+/// therefore (a) bakes one machine's home directory into the test binary and
+/// (b) fails to build at all on Windows, where the variable is `USERPROFILE`.
+/// Resolving at runtime compiles everywhere; where neither variable is set the
+/// path simply will not exist and the caller skips -- the same outcome as the
+/// rig data being absent, which is this file's existing convention.
+fn rig_path(rel: &str) -> std::path::PathBuf {
+    let home = std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .unwrap_or_else(|_| "/nonexistent-home".to_string());
+    std::path::PathBuf::from(format!("{home}{rel}"))
+}
+
 
 const CODE_TOL: f64 = 0.02;
 const PER_LOOKUP_BUDGET_MS: f64 = 8.0;
@@ -25,14 +40,14 @@ fn percentile(sorted: &[f64], p: f64) -> f64 {
 }
 
 fn open_real_star_index() -> Option<Index> {
-    let psidx = Path::new(concat!(env!("HOME"), "/astroops/data/gaia-dr3-g16-dec45-nside64.psidx"));
+    let psidx = rig_path("/astroops/data/gaia-dr3-g16-dec45-nside64.psidx");
     let psqidx =
-        Path::new(concat!(env!("HOME"), "/astroops/data/gaia-dr3-g16-dec45-nside64.psqidx"));
+        rig_path("/astroops/data/gaia-dr3-g16-dec45-nside64.psqidx");
     if !psidx.exists() || !psqidx.exists() {
         eprintln!("skipping: real gaia-dr3-g16-dec45-nside64 index not present");
         return None;
     }
-    Some(Index::open(psidx).unwrap())
+    Some(Index::open(&psidx).unwrap())
 }
 
 /// Routine (non-`#[ignore]`) real-index check: band 3 (2.0 deg, 63,211
@@ -43,9 +58,9 @@ fn open_real_star_index() -> Option<Index> {
 #[test]
 fn candidates_meets_the_blind_solve_per_lookup_budget_on_a_real_band() {
     let psqidx =
-        Path::new(concat!(env!("HOME"), "/astroops/data/gaia-dr3-g16-dec45-nside64.psqidx"));
+        rig_path("/astroops/data/gaia-dr3-g16-dec45-nside64.psqidx");
     let Some(star_index) = open_real_star_index() else { return };
-    let qidx = QuadIndex::open(psqidx, &star_index).unwrap();
+    let qidx = QuadIndex::open(&psqidx, &star_index).unwrap();
 
     let band = 3usize; // 2.0 deg
     let n = qidx.band_len(band);
@@ -63,9 +78,9 @@ fn candidates_meets_the_blind_solve_per_lookup_budget_on_a_real_band() {
 #[ignore]
 fn candidates_meets_the_blind_solve_per_lookup_budget_on_the_full_dominant_band() {
     let psqidx =
-        Path::new(concat!(env!("HOME"), "/astroops/data/gaia-dr3-g16-dec45-nside64.psqidx"));
+        rig_path("/astroops/data/gaia-dr3-g16-dec45-nside64.psqidx");
     let Some(star_index) = open_real_star_index() else { return };
-    let qidx = QuadIndex::open(psqidx, &star_index).unwrap();
+    let qidx = QuadIndex::open(&psqidx, &star_index).unwrap();
 
     // Band 0 (0.25 deg) holds 92.8% of the index (17,343,044 / 18,692,947
     // quads, per Task 2/3's measured per-band counts) -- the band whose
