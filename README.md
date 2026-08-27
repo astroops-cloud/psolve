@@ -85,10 +85,13 @@ permission cases), plus the end-to-end synthetic demo, which solves. The release
 is built on that same runner and executed before upload -- it is no longer a
 cross-compiled binary nobody ever ran.
 
-That is the entire extent of it. **No human has installed psolve on a Windows
-machine, pointed it at a real frame, or run it during an imaging session** --
-though that is about to change, and Windows matters here more than the ordering
-of this section suggests.
+On 2026-08-27 psolve ran on the observatory's own Windows capture machine for
+the first time, driven over SSH by Claude Code, against 75 real frames with
+`astap_cli` on the same box for comparison
+([full benchmark](docs/superpowers/2026-08-27-windows-rig-benchmark.md)). On
+science frames it solved **93% against ASTAP's 76%** and was 5.5x faster; on
+15-second pointing probes it solved **0 of 30** where ASTAP solved 26. **No
+human has yet used psolve on Windows interactively.**
 
 **Windows is where the drop-in replacement claim actually gets tested.** This
 project's ASTAP-compatible mode exists so that capture software can call psolve
