@@ -1,0 +1,14 @@
+[package]
+name = "psolve-index"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Star and quad index formats for psolve (.psidx / .psqidx), with mmap readers."
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+memmap2 = "0.9"

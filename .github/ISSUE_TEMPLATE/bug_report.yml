@@ -1,0 +1,94 @@
+name: Bug report
+description: A frame that should solve and does not, a wrong answer, or a crash
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        psolve reports **why** a frame did not solve. Most of what makes a
+        report actionable is already in its own output, so the fields below are
+        mostly copy-and-paste.
+
+        If psolve produced a **confident wrong answer**, say so prominently --
+        that is the most serious class of bug in this project and is treated
+        differently from a refusal to solve.
+
+  - type: textarea
+    id: command
+    attributes:
+      label: The exact command line
+      description: Verbatim, including every flag. Redact paths if you need to.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: psolve's output
+      description: >
+        The full JSON for a native solve, or stderr plus the `.ini` for ASTAP
+        mode. The `reason` field and the `stars.rejected` counts are usually
+        the whole diagnosis.
+      render: json
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The first line of `psolve --help` (`--version` is not a command).
+      placeholder: psolve 0.1.0 (build abc1234)
+    validations:
+      required: true
+
+  - type: textarea
+    id: index
+    attributes:
+      label: Which index, and how it was built
+      description: >
+        Filename, and the `psolve index build` invocation if you still have it
+        (magnitude limit, nside, declination cut). `psolve index info <FILE>`
+        prints most of this. A blind solve also needs the paired `.psqidx`.
+      placeholder: gaia-dr3-g14-dec45-nside64.psidx, built with --max-mag 14 --nside 64
+    validations:
+      required: true
+
+  - type: textarea
+    id: frame
+    attributes:
+      label: The frame
+      description: >
+        Dimensions, XBINNING, whether it is CFA (BAYERPAT present), pixel size
+        and focal length, and whether the header carries pointing. Attaching the
+        frame itself is far better than describing it -- a frame that fails is
+        the fixture that fixes it.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: demo
+    attributes:
+      label: Does `./scripts/demo.sh` pass?
+      description: >
+        This solves synthetic data with no index and no network. If it fails,
+        the problem is in the build or the pipeline rather than in your data,
+        and that is worth knowing before anything else.
+      options:
+        - "Yes -- it solves"
+        - "No -- it fails"
+        - "Have not run it"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Linux
+        - macOS
+        - Windows (note: the Windows binary is cross-compiled and never executed by CI)
+    validations:
+      required: true

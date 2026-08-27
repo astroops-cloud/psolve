@@ -1,0 +1,68 @@
+# Attach binaries to a GitHub Release on a v* tag.
+#
+# ci.yml's `package` job uploads a CI artifact, which expires and is not a
+# release. This is the one that produces something a user can download.
+#
+# NO WINDOWS BINARY IS ATTACHED, deliberately. The .exe is cross-compiled with
+# mingw-w64 and has never been executed -- no Wine, no Windows runner. Attaching
+# it to a release would state more confidence than exists. See
+# packaging/README.md for the platform-coverage table.
+
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset: psolve-linux-amd64
+          - os: macos-latest
+            asset: psolve-macos-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # A release binary that has never run is not a release binary. This is
+      # the same reason the .deb job installs its own artifact.
+      - run: cargo build --release
+      - name: the binary runs
+        run: ./target/release/psolve --help
+
+      - run: mv target/release/psolve "${{ matrix.asset }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: ${{ matrix.asset }}
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - run: ls -l dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          body: |
+            See CHANGELOG.md for what is in this release.
+
+            **psolve needs a star index and none ships here.** Build one from a
+            Gaia DR3 mirror with `psolve index build` -- see docs/index-building.md.
+            An index is CC BY-NC 3.0 IGO, which this project's MIT licence does
+            not cover.
+
+            The macOS binary is unsigned and unnotarised; Gatekeeper will
+            quarantine it. No Windows binary is attached: it is cross-compiled
+            and never executed by CI.

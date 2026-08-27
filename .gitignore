@@ -1,0 +1,24 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Measurement/scratch artefacts from ad-hoc corpus runs -- large, regenerable
+# from the scripts in scripts/, not source.
+/.scratch/
+
+# Built star indexes — hundreds of MB, distributed as release artifacts
+*.psidx
+/index/
+
+# Solver sidecars and scratch output
+*.ini
+*.wcs
+/out/
+# ...except the reference sidecars the compatibility tests compare against.
+!crates/psolve-cli/tests/fixtures/**/*.ini
+!crates/psolve-cli/tests/fixtures/**/*.wcs
+
+# Worktrees created for isolated plan execution (subagent-driven development).
+# Scratch: the branch and its commits are the record, not this directory.
+/.claude/worktrees/
+/.worktrees/

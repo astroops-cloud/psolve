@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = ["crates/psolve-index", "crates/psolve-cli", "crates/psolve-core"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/astroops-cloud/psolve"
+homepage = "https://github.com/astroops-cloud/psolve"
+readme = "README.md"
+keywords = ["astronomy", "astrometry", "plate-solving", "fits", "wcs"]
+categories = ["science", "command-line-utilities"]
+
+# No `rust-version` is declared. It has not been measured -- this machine has
+# no rustup, so older toolchains cannot be installed to find the real floor,
+# and a figure derived from stabilisation notes would be a guess that cargo
+# then enforces on users. See docs/superpowers/plans/2026-08-27-open-source-release.md.
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

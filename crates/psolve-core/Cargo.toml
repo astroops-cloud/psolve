@@ -1,0 +1,13 @@
+[package]
+name = "psolve-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Plate-solving pipeline: FITS bytes in, a verified TAN WCS out. No dependencies."
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
