@@ -74,11 +74,15 @@ measured, not a claim about every rig.
   affects the *accuracy* of solves that already succeed, not whether they
   succeed. See
   [`docs/superpowers/2026-08-27-distortion-signal.md`](docs/superpowers/2026-08-27-distortion-signal.md).
-- **Nobody has used psolve on Windows.** CI builds it natively there and runs
-  620 of the 633 tests run, plus the end-to-end demo, and the released `.exe` is
-  executed before upload -- but no human has installed it on a Windows machine
-  or pointed it at a real frame. Every real frame this project has solved was
-  solved on macOS. Note that Windows is not a peripheral target: the capture
+- **Windows is tested by machine, not by a person.** CI builds it natively and
+  runs 620 of the 633 tests run, plus the end-to-end demo, and the released
+  `.exe` is executed before upload. On 2026-08-27 it was also benchmarked on a
+  real observatory capture machine against `astap_cli`: **93% vs 76% on science
+  frames, and 0 of 30 on 15-second pointing probes** -- the same completeness
+  weakness the primary rig shows on macOS, reproducing on another OS and CPU
+  ([benchmark](docs/superpowers/2026-08-27-windows-rig-benchmark.md)). psolve
+  solved 5.5x faster there and failed 5x slower. **No human has used psolve on
+  Windows interactively.** Note that Windows is not a peripheral target: the capture
   machine on the telescope runs it, and ASTAP-compatible mode exists so that
   N.I.N.A. can call psolve there mid-sequence. **On Windows the `-update`
   safety model is also weaker** -- `fits_update::same_directory` returns `None`
