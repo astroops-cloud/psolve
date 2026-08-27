@@ -1,16 +1,28 @@
 # Packaging psolve
 
-What ships, on which platform, and what is verified. Written 2026-08-23.
+What ships, on which platform, and what is verified. Written 2026-08-23,
+re-measured 2026-08-27 after CI moved to GitHub Actions.
 
-The short version: **Linux is built and tested, Windows is built and untested,
-macOS is neither yet.** That asymmetry is not laziness -- it falls directly out
-of the CI available when it was written: one runner, Linux containers only.
+The short version: **Linux and macOS are built and executed; Windows is built
+and never executed.** The remaining asymmetry is not laziness -- there is no
+Windows runner and no Wine, so nothing in CI can run the `.exe`.
 
-| platform | artifact | built by | executed by CI? |
+Measured from the `release` workflow on `v0.1.0` (2026-08-27, all five jobs
+success), which is where every artifact below actually came from:
+
+| platform | artifact | size | executed by CI? |
 |---|---|---|---|
-| Linux amd64 | `.deb` | `deb` job, natively | **yes** -- installs its own artifact and runs it |
-| Windows x86_64 | `.zip` of `psolve.exe` | `windows` job, cross-compiled with mingw-w64 | **no** -- see below |
-| macOS arm64 | Homebrew formula | nothing yet | no |
+| Linux amd64 | `.deb` | 408,088 B | **yes** -- `dpkg -i` its own artifact, then runs the installed binary and lists it with `dpkg -L` |
+| Linux amd64 | bare binary | 1,118,752 B | **yes** -- `psolve --version` |
+| macOS arm64 | bare binary | 963,680 B | **yes** -- `psolve --version` |
+| Windows x86_64 | `.zip` of `psolve.exe` | 513,946 B | **no** -- asserted to be a PE32+ image and nothing more |
+
+macOS gained real coverage in the same move: `ci.yml` runs the **full test
+suite and the synthetic demo on `macos-latest` on every push**, measured green
+on 2026-08-27 in 1m56s. The sentence this file used to carry -- that macOS was
+"neither built nor executed", because Apple SDK licensing rules out
+cross-compiling from Linux -- was true of a Linux-only CI and is no longer
+true. The licensing fact is unchanged; what changed is that CI now has a Mac.
 
 ## Linux
 
@@ -53,11 +65,15 @@ marker placed on a symlinked tree rather than the file's physical location, are
 reduced. Anyone running `-update` on Windows against a tree reached through
 junctions should rely on `PSOLVE_READONLY`, not on marker placement.
 
-## macOS -- needs a runner on a Mac
+## macOS
 
 Apple's SDK licensing makes cross-compiling to Apple targets from Linux a
-non-starter, so a Linux-only CI cannot produce a macOS build at all. Two
-paths, and they are complementary rather than alternatives:
+non-starter. That no longer blocks anything, because `macos-latest` is a real
+Mac: the suite, the demo and the release binary all run there natively.
+
+What is still missing is **distribution**. The binary is unsigned and
+unnotarised, so Gatekeeper quarantines it, and the Homebrew formula is written
+but unpublished. Two paths, complementary rather than alternatives:
 
 ### 1. Homebrew tap (no runner needed)
 
