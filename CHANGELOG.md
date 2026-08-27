@@ -32,9 +32,13 @@ including what the approach cost.
   from the truth.
 - **Reason codes** for every refusal, so a frame that does not solve says why
   rather than just failing.
-- **A four-rung retry ladder** -- header scale/binning with catalogue refetch,
-  matched-filter re-extraction, pair matching, tight search radius -- ordered so
-  that a frame which solves today does not change its answer or even its route.
+- **A five-rung retry ladder** -- header scale/binning with catalogue refetch,
+  matched-filter re-extraction, pair matching, tight search radius, and a
+  **blind fallback** for when the pointing hint is wrong by more than the
+  search radius -- ordered so that a frame which solves today does not change
+  its answer or even its route. The last rung was added after a real
+  pointing-model build produced 26 frames pointing 19 degrees from truth; 24
+  now solve ([measurement](docs/superpowers/2026-08-27-blind-fallback.md)).
 - **`psolve index build`** from a Gaia DR3 mirror
   ([`docs/index-building.md`](docs/index-building.md)), and a **prebuilt
   all-sky G≤14 index attached to this release** -- `.psidx` (257 MB) plus the

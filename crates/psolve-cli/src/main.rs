@@ -389,7 +389,40 @@ fn astap_cmd(program: &str, args: &[String]) -> ExitCode {
                         }),
                         Some(&bytes),
                     );
-                    attempt.outcome
+
+                    // The ladder's last rung, wired HERE as well as in native
+                    // mode. AstroOps reaches psolve through this dispatch, and
+                    // a mount whose pointing is wrong by more than the search
+                    // radius is exactly what this surface meets during a
+                    // pointing-model build. A fix that reached only
+                    // `cmd_solve.rs` is the mistake this call site has already
+                    // made once (the 2026-08-14 scale retry).
+                    //
+                    // Auto-discovered from `-d`/`-D` like the hintless blind
+                    // path above, so no new flag appears in a grammar that must
+                    // stay indistinguishable from astap_cli's.
+                    let quads = match &attempt.outcome {
+                        psolve_core::solve::Outcome::Failed { .. } => {
+                            astap_args::resolve_quad_index_path(parsed.db_dir.as_deref())
+                                .and_then(|p| {
+                                    psolve_index::quad_reader::QuadIndex::open(&p, &index).ok()
+                                })
+                        }
+                        _ => None,
+                    };
+                    cmd_solve::blind_fallback(
+                        attempt.outcome,
+                        &parsed.file,
+                        &prepared,
+                        hdr.as_ref(),
+                        &index,
+                        quads.as_ref(),
+                        radius_deg,
+                        limit,
+                        None,
+                        &opts,
+                        false,
+                    )
                 }
             }
         }

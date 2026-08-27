@@ -16,6 +16,13 @@
 #   DB           path to catalogue.db        [default: ~/astroops/state/catalogue.db]
 #   JOBS         parallel psolve workers     [default: 8]
 #   RIG          restrict to one instrument  [default: all rigs]
+#   QUAD_INDEX   .psqidx for the blind fallback  [default: none]
+#
+# WHY QUAD_INDEX EXISTS. The blind fallback rung only fires when a quad index
+# is available, so a run without one cannot exercise it AT ALL -- a regression
+# check that never reaches the code it is checking proves only that the change
+# is inert. Point this at the .psqidx paired with $INDEX to measure the path
+# that actually fires.
 #
 # WHY RIG EXISTS. The corpus is not evenly distributed across instruments: as of
 # 2026-08-27 the DWARFIII contributes 8,105 of the 10,378 ASTAP-solved frames,
@@ -43,6 +50,7 @@ INDEX="${INDEX:-$HOME/astroops/data/gaia-dr3-g14-dec45-nside64.psidx}"
 DB="${DB:-$HOME/astroops/state/catalogue.db}"
 JOBS="${JOBS:-8}"
 RIG="${RIG:-}"
+QUAD_INDEX="${QUAD_INDEX:-}"
 
 if [ ! -x "$PSOLVE_BIN" ]; then
   echo "agreement.sh: $PSOLVE_BIN not built; run cargo build --release first" >&2
@@ -256,7 +264,7 @@ echo "running psolve over $SELECTED frames, $JOBS parallel workers ..." >&2
 # each. Defaults everywhere except --index (required) and --hint (see the
 # comment above the SQL query for why this run supplies a hint from the DB's
 # commanded pointing rather than leaving it to header auto-detection).
-PSOLVE_BIN="$PSOLVE_BIN" INDEX="$INDEX" JOBS="$JOBS" \
+PSOLVE_BIN="$PSOLVE_BIN" INDEX="$INDEX" JOBS="$JOBS" QUAD_INDEX="$QUAD_INDEX" \
   python3 - "$WORK/selected.tsv" "$OUT" <<'PYEOF'
 import concurrent.futures
 import json
@@ -268,6 +276,7 @@ import time
 selected_path, out_path = sys.argv[1], sys.argv[2]
 PSOLVE = os.environ["PSOLVE_BIN"]
 INDEX = os.environ["INDEX"]
+QUAD_INDEX = os.environ.get("QUAD_INDEX") or ""
 JOBS = int(os.environ.get("JOBS", "8"))
 
 CARD, BLOCK, MAX_BLOCKS = 80, 2880, 256
@@ -392,6 +401,11 @@ def run_one(row):
         rec["header"] = {"has_wcs": False, "error": str(e)}
 
     cmd = [PSOLVE, "solve", path, "--index", INDEX, "--hint", f"{hint_ra},{hint_dec}"]
+    # The blind fallback rung only fires when a quad index is available, so a
+    # run without one cannot exercise it. Opt in with QUAD_INDEX so the choice
+    # is visible in `rec["cmd"]` rather than implied by the environment.
+    if QUAD_INDEX:
+        cmd += ["--quad-index", QUAD_INDEX]
     rec["cmd"] = cmd
     t0 = time.monotonic()
     try:

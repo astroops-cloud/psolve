@@ -22,7 +22,7 @@ This repo was written almost entirely by Claude Code over 14 days
 ## Commands
 
 ```sh
-cargo test --workspace                 # 633 run + 2 ignored, ~3 min cold; all pass, clippy clean
+cargo test --workspace                 # 636 run + 2 ignored, ~3 min cold; all pass, clippy clean
 cargo test -p psolve-cli --test blind_solve            # one test file
 cargo test -p psolve-core no_filesystem                # one test target by name filter
 cargo test -- --ignored --nocapture                    # the slow real-index/measurement tests
@@ -167,7 +167,7 @@ verification story on the emitted order.
 
 ### The retry ladder (`psolve-cli::solve_with_binning_retry`)
 
-Four rungs, run in order, each reached only when everything above it failed.
+Five rungs, run in order, each reached only when everything above it failed.
 **The ordering is load-bearing and the rule behind it is not negotiable: a
 frame that solves today must not change its answer or even its route.** That
 makes each addition regression-free by construction rather than by
@@ -181,13 +181,21 @@ measurement.
    default
 4. **tight search radius** -- refetch at `RADIUS_RETRY_HALF_DIAG_FRAC` (0.5)
    of the frame half-diagonal
+5. **blind fallback** (`blind_fallback`) -- stop believing the hint entirely
+   and search the `.psqidx` code space. Only when a quad index is available.
+   Added 2026-08-27 after a pointing-model build produced 26 frames whose mount
+   pointing was 18.8-19.5 deg from truth against a 1.66 deg search radius;
+   24 of them now solve (`docs/superpowers/2026-08-27-blind-fallback.md`).
+   Widening the radius is NOT the alternative -- 5, 15 and 25 deg all still
+   fail, because a fixed catalogue budget spread over more sky collapses
+   completeness in the actual field.
 
 Rungs 3 and 4 are handed **the best inputs any earlier rung produced** (the
 refetched disc, the matched-filter star list, the corrected scale), not the
 originals. Getting that wrong cost 14 frames when rung 3 first landed.
 
 Two defects this ladder has already produced, both worth knowing before
-adding a fifth rung:
+adding a sixth rung -- and both of which the fifth was built to avoid:
 
 - **A rung defaulted ON inside `solve_prepared` pre-empted the rungs above
   it.** 41 already-solving frames silently moved onto a different route.

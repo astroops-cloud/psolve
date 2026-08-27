@@ -860,6 +860,75 @@ uncorrected scale",
     SolveAttempt { outcome: result, scale_source, refetched }
 }
 
+/// A hinted solve that has exhausted the ladder, retried BLIND.
+///
+/// Reached only when every rung above has failed and a `.psqidx` is available,
+/// so it is last by construction and a frame that solves today cannot change
+/// its answer or its route.
+///
+/// Why it exists. A hint that is present is trusted, and a hint can be wrong by
+/// far more than the search radius. Measured 2026-08-27 against a real
+/// pointing-model build: 26 frames whose mount pointing sat **18.8 to 19.5
+/// degrees** from the truth, against a 1.66 degree search radius. psolve failed
+/// every one with `NO_QUAD_MATCH` while ASTAP, given `-r 30`, solved 26 of
+/// them. Handed the correct position psolve solved them at 0.36" rms; handed no
+/// position at all it solved them blind. The capability was already built and
+/// simply unreachable, because nothing ever concluded "this hint is not
+/// survivable, stop believing it".
+///
+/// Widening the radius is not the alternative: the catalogue budget is fixed,
+/// so a wider disc spreads the same stars over more sky and matching gets
+/// worse. That is measured in `2026-08-26-radius-sensitivity.md`.
+#[allow(clippy::too_many_arguments)] // orchestration, as `solve_blind` itself
+pub(crate) fn blind_fallback(
+    failed: Outcome,
+    path: &str,
+    prepared: &PreparedFrame,
+    hdr: Option<&psolve_core::fits::FitsHeader>,
+    star_index: &Index,
+    quad_index: Option<&QuadIndex>,
+    radius_deg: f64,
+    cat_limit: usize,
+    max_mag: Option<f32>,
+    base_opts: &SolveOptions,
+    explicit_scale_given: bool,
+) -> Outcome {
+    if !matches!(failed, Outcome::Failed { .. }) {
+        return failed;
+    }
+    let Some(quads) = quad_index else {
+        // No quad index is not a failure of this rung -- there is simply
+        // nothing to fall back to, and a slower refusal helps nobody.
+        return failed;
+    };
+
+    eprintln!(
+        "solving {path}: hinted solve exhausted; the hint may be wrong --          falling back to a blind search"
+    );
+    let search = solve_blind(
+        path,
+        prepared,
+        hdr,
+        star_index,
+        quads,
+        radius_deg,
+        cat_limit,
+        max_mag,
+        base_opts,
+        explicit_scale_given,
+    );
+
+    if matches!(search.outcome, Outcome::Solved(_)) {
+        return search.outcome;
+    }
+    // Adopt the blind failure too when it is the more informative one. A rung
+    // whose failure is discarded leaves no trace it ran, which cost this
+    // project a diagnosis once already -- see `keep_most_informative`.
+    let mut held = Some((failed, "hinted"));
+    keep_most_informative(&mut held, (search.outcome, "blind-fallback"));
+    held.expect("keep_most_informative always leaves a value").0
+}
+
 // ---------------------------------------------------------------------------
 // Blind solving (Task 7): wiring the pieces Tasks 4-6 left unreachable.
 //
@@ -1694,7 +1763,41 @@ pub fn solve_cmd(args: &[&str]) -> ExitCode {
                         cat_concentration = sel.concentration;
                         cat_stratified = sel.stratified;
                     }
-                    attempt.outcome
+
+                    // The ladder's last rung: a hint can be wrong by far more
+                    // than the search radius, and a blind search does not care
+                    // where the mount thought it was pointing. Opened lazily,
+                    // so a frame that solves never pays for it. A quad index
+                    // that will not open is reported and skipped rather than
+                    // turned into a usage error here -- the hinted answer
+                    // above is already the caller's result, and failing the
+                    // whole command over an optional fallback would be worse
+                    // than not attempting it.
+                    let quads = match (&attempt.outcome, quad_index_path) {
+                        (Outcome::Failed { .. }, Some(qpath)) => {
+                            match QuadIndex::open(Path::new(qpath), &index) {
+                                Ok(q) => Some(q),
+                                Err(e) => {
+                                    eprintln!("psolve solve: blind fallback unavailable: {e}");
+                                    None
+                                }
+                            }
+                        }
+                        _ => None,
+                    };
+                    blind_fallback(
+                        attempt.outcome,
+                        path,
+                        &prepared,
+                        hdr.as_ref(),
+                        &index,
+                        quads.as_ref(),
+                        radius_deg,
+                        limit,
+                        max_mag,
+                        &opts_base,
+                        scale_arcsec_raw.is_some(),
+                    )
                 }
             }
         }
