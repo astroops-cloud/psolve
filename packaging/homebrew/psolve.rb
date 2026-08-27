@@ -1,10 +1,20 @@
 # Homebrew formula for psolve.
 #
-# HOSTING: the `url` below points at this repo's own v0.1.0 source tarball on
-# GitHub, so it is reachable by anyone. What it is NOT is verified: the
-# `sha256` is still the deliberate placeholder (see TO UPDATE), so this formula
-# refuses to install until someone computes the real digest of that exact
-# tarball. Publishing it also needs a tap repo; see packaging/README.md.
+# HOSTING: the `url` points at this repo's own v0.1.0 source tarball on GitHub,
+# and the `sha256` below is the REAL digest of it, computed 2026-08-27 and
+# checked stable across two independent fetches. It is no longer the refusing
+# placeholder this file carried until then.
+#
+# TWO THINGS THAT STILL BLOCK `brew install`:
+#
+#   1. A formula does nothing sitting in this directory. It has to live in a
+#      repo named `homebrew-<tap>`; see packaging/README.md.
+#   2. The digest is of GitHub's AUTO-GENERATED source tarball. Those are not
+#      contractually byte-stable -- GitHub has changed its archive compression
+#      before and broken formulas doing exactly this. If `brew` ever reports a
+#      checksum mismatch, re-compute rather than assuming a compromised
+#      download, and consider attaching a hand-built tarball to the release so
+#      the bytes are ours rather than generated.
 #
 # TO PUBLISH: this file has to live in a tap repo named `homebrew-<tap>` --
 # it does nothing sitting here. See packaging/README.md for the steps, which
@@ -22,7 +32,7 @@ class Psolve < Formula
   desc "Plate solver: FITS bytes in, a verified TAN WCS out. ASTAP-CLI compatible"
   homepage "https://github.com/astroops-cloud/psolve"
   url "https://github.com/astroops-cloud/psolve/archive/refs/tags/v0.1.0.tar.gz"
-  sha256 "REPLACE_ME_WITH_THE_REAL_DIGEST_SEE_COMMENT_ABOVE"
+  sha256 "db116599cb8d0e2a675b8b4a1ff1f9249fdefc0ee0afbad591720d68a6438f3e"
   license "MIT"
 
   depends_on "rust" => :build
