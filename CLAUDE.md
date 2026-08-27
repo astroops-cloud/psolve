@@ -261,10 +261,12 @@ Platform coverage is asymmetric and `packaging/README.md` states it plainly.
 Measured from the `release` run on `v0.1.0`, 2026-08-27: the Linux amd64 `.deb`
 is built **and executed** (the job `dpkg -i`s its own artifact and runs the
 installed binary), the Linux and macOS bare binaries are built **and run**, and
-the Windows `.exe` is cross-compiled with mingw-w64 and **never run** (no Wine,
-no Windows runner — treat every `.exe` as unverified; CI asserts only that it
-is a PE32+ image). macOS is no longer the gap it was: `ci.yml` runs the whole
-suite and the demo on `macos-latest` on every push. `packaging/homebrew/psolve.rb`
+and the Windows `.exe` is built **natively on `windows-latest` and executed**
+since 2026-08-27 (it was previously cross-compiled with mingw-w64 and never
+run). `ci.yml` runs the whole suite and the demo on all three platforms every
+push: 620 of 634 tests pass on Windows, the 14 gaps being `#[cfg(unix)]`
+symlink and permission tests. **No human has run psolve on Windows** — CI is
+the only thing that has, and that distinction belongs in any copy you write. `packaging/homebrew/psolve.rb`
 still carries a deliberately invalid `sha256` so it refuses to install rather
 than installing whatever it downloaded. One shipped behaviour difference follows
 from all this: on Windows `fits_update::same_directory` returns `None`

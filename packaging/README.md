@@ -3,9 +3,10 @@
 What ships, on which platform, and what is verified. Written 2026-08-23,
 re-measured 2026-08-27 after CI moved to GitHub Actions.
 
-The short version: **Linux and macOS are built and executed; Windows is built
-and never executed.** The remaining asymmetry is not laziness -- there is no
-Windows runner and no Wine, so nothing in CI can run the `.exe`.
+The short version: **all three platforms are now built and executed by CI.**
+Windows joined on 2026-08-27; before that its `.exe` was cross-compiled on
+Linux with mingw-w64 and never run, so the artifact that shipped was a
+different binary, from a different toolchain, than the one the tests covered.
 
 Measured from the `release` workflow on `v0.1.0` (2026-08-27, all five jobs
 success), which is where every artifact below actually came from:
@@ -15,7 +16,15 @@ success), which is where every artifact below actually came from:
 | Linux amd64 | `.deb` | 408,088 B | **yes** -- `dpkg -i` its own artifact, then runs the installed binary and lists it with `dpkg -L` |
 | Linux amd64 | bare binary | 1,118,752 B | **yes** -- `psolve --version` |
 | macOS arm64 | bare binary | 963,680 B | **yes** -- `psolve --version` |
-| Windows x86_64 | `.zip` of `psolve.exe` | 513,946 B | **no** -- asserted to be a PE32+ image and nothing more |
+| Windows x86_64 | `.zip` of `psolve.exe` | built natively on `windows-latest` | **yes** -- `psolve --version` before upload |
+
+Windows coverage, measured on the `ci` run of 2026-08-27: **620 of the 634
+tests pass** on `windows-latest` (the 14 not run are `#[cfg(unix)]` symlink and
+permission cases), the synthetic demo solves end to end, and the job takes
+3m53s. The `-update` safety model is still weaker there --
+`fits_update::same_directory` returns `None` unconditionally, so one of the
+three `.psolve-readonly` ancestor chains is unavailable. **And no human has
+ever run psolve on Windows**; CI is the only thing that has.
 
 macOS gained real coverage in the same move: `ci.yml` runs the **full test
 suite and the synthetic demo on `macos-latest` on every push**, measured green

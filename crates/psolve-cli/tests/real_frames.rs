@@ -7,13 +7,29 @@
 use std::path::Path;
 use std::process::Command;
 
+/// Absolute path to something under the rig data root.
+///
+/// This was `concat!(env!("HOME"), ...)`, which resolves at COMPILE time and
+/// therefore (a) bakes one machine's home directory into the test binary and
+/// (b) fails to build at all on Windows, where the variable is `USERPROFILE`.
+/// Resolving at runtime compiles everywhere; where neither variable is set the
+/// path simply will not exist and the caller skips -- the same outcome as the
+/// rig data being absent, which is this file's existing convention.
+fn rig_path(rel: &str) -> std::path::PathBuf {
+    let home = std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .unwrap_or_else(|_| "/nonexistent-home".to_string());
+    std::path::PathBuf::from(format!("{home}{rel}"))
+}
+
+
 fn bin() -> std::path::PathBuf {
     let mut p = std::env::current_exe().unwrap();
     p.pop();
     if p.ends_with("deps") {
         p.pop();
     }
-    p.join("psolve")
+    p.join(format!("psolve{}", std::env::consts::EXE_SUFFIX))
 }
 
 /// Pull `"field":{"center":{"ra":..,"dec":..}` out of the JSON without a JSON
@@ -48,9 +64,9 @@ struct TestSolution {
 /// overrides): the header's own `OBJCTRA`/`OBJCTDEC` supply the pointing
 /// hint, exactly as an operator running `psolve solve <file> --index <idx>`
 /// would get. Returns `None` on any non-solve outcome or unparseable output.
-fn solve_for_test(path: &str, idx: &Path) -> Option<TestSolution> {
+fn solve_for_test(path: &std::path::Path, idx: &Path) -> Option<TestSolution> {
     let o = Command::new(bin())
-        .args(["solve", path, "--index"])
+        .args(["solve", &path.to_string_lossy(), "--index"])
         .arg(idx)
         .output()
         .ok()?;
@@ -82,9 +98,7 @@ fn angular_sep_arcsec(ra1: f64, dec1: f64, ra2: f64, dec2: f64) -> f64 {
 /// runs on a machine without the 0.22 GB index.
 #[test]
 fn real_frames_solve_at_defaults() {
-    let idx = std::path::Path::new(
-        concat!(env!("HOME"), "/astroops/data/gaia-dr3-g14-dec45-nside64.psidx"),
-    );
+    let idx = rig_path("/astroops/data/gaia-dr3-g14-dec45-nside64.psidx");
     if !idx.exists() {
         eprintln!("skipping: rig index not present");
         return;
@@ -104,26 +118,26 @@ fn real_frames_solve_at_defaults() {
     // for the full table.
     let frames = [
         (
-            concat!(env!("HOME"), "/astroops/library/eagle/lights/H/\
+            rig_path("/astroops/library/eagle/lights/H/\
                      2026-07-29_22-47-02_H_120.00s_100g_1x1_0001_-10.00.fits"),
             274.6890869201_f64,
             -13.81097073266_f64,
         ),
         (
-            concat!(env!("HOME"), "/astroops/library/eagle/lights/H/\
+            rig_path("/astroops/library/eagle/lights/H/\
                      2026-08-11_22-26-00_H_120.00s_100g_1x1_0001_-9.90.fits"),
             274.7273080441_f64,
             -13.84718397251_f64,
         ),
     ];
     for (path, ra, dec) in frames {
-        if !std::path::Path::new(path).exists() {
-            eprintln!("skipping {path}: not present");
+        if !path.exists() {
+            eprintln!("skipping {}: not present", path.display());
             continue;
         }
-        let sol = solve_for_test(path, idx).expect("must solve at defaults");
+        let sol = solve_for_test(&path, &idx).expect("must solve at defaults");
         let sep = angular_sep_arcsec(sol.center_ra, sol.center_dec, ra, dec);
-        assert!(sep < 10.0, "{path}: {sep:.1}\" from ASTAP");
+        assert!(sep < 10.0, "{}: {sep:.1}\" from ASTAP", path.display());
     }
 }
 
@@ -200,17 +214,12 @@ fn scratch_dir(tag: &str) -> std::path::PathBuf {
 /// against real ASTAP ground truth, per this fix round's own instruction.
 #[test]
 fn sidecar_crpix_is_one_based_and_agrees_with_astap_on_a_real_solve() {
-    let idx = std::path::Path::new(
-        concat!(env!("HOME"), "/astroops/data/gaia-dr3-g14-dec45-nside64.psidx"),
-    );
+    let idx = rig_path("/astroops/data/gaia-dr3-g14-dec45-nside64.psidx");
     if !idx.exists() {
         eprintln!("skipping: rig index not present");
         return;
     }
-    let source = std::path::Path::new(concat!(
-        env!("HOME"),
-        "/astroops/library/prawn/lights/S/2026-07-28_23-12-39_S_300.00s_100g_1x1_0023_-9.90.fits"
-    ));
+    let source = rig_path("/astroops/library/prawn/lights/S/2026-07-28_23-12-39_S_300.00s_100g_1x1_0023_-9.90.fits");
     if !source.exists() {
         eprintln!("skipping: reference frame not present");
         return;
@@ -267,7 +276,7 @@ fn sidecar_crpix_is_one_based_and_agrees_with_astap_on_a_real_solve() {
     // `astap_args::search_radius_deg`'s doc comment says it should. Never
     // -update -- only the sidecars are written, and only into the scratch
     // copy's own directory.
-    let db_dir = std::path::Path::new(concat!(env!("HOME"), "/astroops/data"));
+    let db_dir = rig_path("/astroops/data");
     let o = Command::new(bin())
         .arg("-f")
         .arg(&astap_copy)
@@ -333,17 +342,12 @@ fn sidecar_crpix_is_one_based_and_agrees_with_astap_on_a_real_solve() {
 /// decisively between the two.
 #[test]
 fn field_center_matches_astap_header_crval_on_a_real_solve() {
-    let idx = std::path::Path::new(
-        concat!(env!("HOME"), "/astroops/data/gaia-dr3-g14-dec45-nside64.psidx"),
-    );
+    let idx = rig_path("/astroops/data/gaia-dr3-g14-dec45-nside64.psidx");
     if !idx.exists() {
         eprintln!("skipping: rig index not present");
         return;
     }
-    let source = std::path::Path::new(concat!(
-        env!("HOME"),
-        "/astroops/library/prawn/lights/S/2026-07-28_23-12-39_S_300.00s_100g_1x1_0023_-9.90.fits"
-    ));
+    let source = rig_path("/astroops/library/prawn/lights/S/2026-07-28_23-12-39_S_300.00s_100g_1x1_0023_-9.90.fits");
     if !source.exists() {
         eprintln!("skipping: reference frame not present");
         return;

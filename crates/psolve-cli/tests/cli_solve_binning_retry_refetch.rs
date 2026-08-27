@@ -18,7 +18,7 @@ fn bin() -> std::path::PathBuf {
     if p.ends_with("deps") {
         p.pop();
     }
-    p.join("psolve")
+    p.join(format!("psolve{}", std::env::consts::EXE_SUFFIX))
 }
 
 fn tmpdir(tag: &str) -> std::path::PathBuf {
