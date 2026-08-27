@@ -43,10 +43,17 @@ the author eating his own dogfood. Not as a replacement: the last per-rig
 measurement (2026-08-23) had psolve winning by a wide margin on one camera,
 level on another, and **losing on the primary instrument**, for a diagnosed
 reason ([a completeness⁴
-problem](docs/superpowers/2026-08-24-atr585m-diagnostic.md)). Three solver
-improvements landed after that measurement and it has not been re-run, so the
-honest status is *unknown*, not *fixed*. Both tools file their answers
-independently and ASTAP remains the one the pipeline trusts.
+problem](docs/superpowers/2026-08-24-atr585m-diagnostic.md)). **Re-measured 2026-08-27: the regression
+stands.** On frames ASTAP has no answer for, psolve solves 34.1% of the primary
+rig's against ~67% on the other two, and 64% of those failures are
+`TOO_FEW_STARS` -- a detection shortfall, which the 2026-08-25 improvements
+could not touch because they are all matching rungs
+([full measurement](docs/superpowers/2026-08-27-per-rig-remeasure.md)).
+
+On frames ASTAP *did* solve, psolve reproduces 1,099 of 1,102 on that same rig
+at 0.132" median, so it is not broken there -- it is weaker specifically on
+marginal frames. Both tools file their answers independently and ASTAP remains
+the one the pipeline trusts.
 
 psolve is not a better ASTAP. It is a **narrower** tool with a different set of
 trade-offs, and for some jobs those trade-offs are the ones you want.

@@ -22,10 +22,11 @@ observatory and a fortnight. It has run my pipeline since that pipeline
 existed, and it stays installed.
 
 psolve is now going in beside it -- I am eating my own dogfood, as of
-2026-08-27. Beside it, not instead of it: my own last per-rig measurement has
-psolve losing on my primary camera, and the improvements that landed afterwards
-have not been measured against that split. Running it in production is how I
-find out whether it holds up; it is not a claim that it already has.
+2026-08-27. Beside it, not instead of it, and now for a measured reason
+rather than a cautious one: re-measured on 2026-08-27, psolve still solves only
+34% of my primary camera's hard frames against ~67% on the other two, because
+64% of them fail for want of detected stars. Running it in production is how I
+find out whether the rest holds up; it is not a claim that it already has.
 
 The comparisons in the README are on frames ASTAP **failed** on or has no
 record for. That is a biased sample by construction, and it is labelled as one.

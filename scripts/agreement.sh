@@ -15,6 +15,15 @@
 #   INDEX        path to the .psidx index    [default: ~/astroops/data/gaia-dr3-g14-dec45-nside64.psidx]
 #   DB           path to catalogue.db        [default: ~/astroops/state/catalogue.db]
 #   JOBS         parallel psolve workers     [default: 8]
+#   RIG          restrict to one instrument  [default: all rigs]
+#
+# WHY RIG EXISTS. The corpus is not evenly distributed across instruments: as of
+# 2026-08-27 the DWARFIII contributes 8,105 of the 10,378 ASTAP-solved frames,
+# 78% of the total. A corpus-wide solve rate is therefore mostly a statement
+# about that one camera, and CANNOT answer "how does psolve do on THIS rig" --
+# which is the question that matters when deciding whether to switch a
+# particular instrument over. `RIG='ATR585M' scripts/agreement.sh full out.ndjson`
+# asks it directly. Valid values come from `SELECT DISTINCT rig FROM frame`.
 set -euo pipefail
 
 MODE="${1:?usage: agreement.sh <sample|full> [N] <out.ndjson>}"
@@ -33,6 +42,7 @@ PSOLVE_BIN="${PSOLVE_BIN:-$REPO_ROOT/target/release/psolve}"
 INDEX="${INDEX:-$HOME/astroops/data/gaia-dr3-g14-dec45-nside64.psidx}"
 DB="${DB:-$HOME/astroops/state/catalogue.db}"
 JOBS="${JOBS:-8}"
+RIG="${RIG:-}"
 
 if [ ! -x "$PSOLVE_BIN" ]; then
   echo "agreement.sh: $PSOLVE_BIN not built; run cargo build --release first" >&2
@@ -67,8 +77,15 @@ trap 'rm -rf "$WORK"' EXIT
 # "pointing", not an independent value. agreement-report.py reports this
 # count explicitly rather than letting the report imply every hint is
 # independent of the answer being measured against.
+if [ -n "$RIG" ]; then
+  echo "restricting to rig '$RIG'" >&2
+  RIG_PREDICATE="AND f.rig = '$(printf %s "$RIG" | sed "s/'/''/g")'"
+else
+  RIG_PREDICATE=""
+fi
+
 echo "extracting ASTAP-solved frame list from $DB ..." >&2
-sqlite3 -readonly "$DB" <<'SQL' > "$WORK/all.tsv"
+sqlite3 -readonly "$DB" <<SQL > "$WORK/all.tsv"
 SELECT l.path, m.ra_deg, m.dec_deg, f.naxis1, f.naxis2, f.binning, f.filt_eff, f.id, f.ra_deg, f.dec_deg, f.pointing_src
 FROM measurement m
 JOIN frame f ON f.id = m.frame_id
@@ -80,10 +97,11 @@ JOIN location l ON l.frame_id = f.id
    LIMIT 1
  )
 WHERE m.tool_version = 'astap/astap+d50'
-  AND m.ra_deg IS NOT NULL AND l.intact = 1;
+  AND m.ra_deg IS NOT NULL AND l.intact = 1
+  $RIG_PREDICATE;
 SQL
 TOTAL=$(wc -l < "$WORK/all.tsv" | tr -d ' ')
-MEASURED=$(sqlite3 -readonly "$DB" "SELECT COUNT(*) FROM measurement WHERE tool_version='astap/astap+d50';")
+MEASURED=$(sqlite3 -readonly "$DB" "SELECT COUNT(*) FROM measurement m JOIN frame f ON f.id=m.frame_id WHERE m.tool_version='astap/astap+d50' ${RIG_PREDICATE};")
 echo "extracted $TOTAL frames (measurement table has $MEASURED rows for astap/astap+d50)" >&2
 if [ "$TOTAL" -gt "$MEASURED" ]; then
   echo "agreement.sh: WARNING extracted more rows ($TOTAL) than measurement has ($MEASURED) -- the location dedup did not fully collapse duplicates" >&2
