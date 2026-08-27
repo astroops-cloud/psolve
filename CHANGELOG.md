@@ -78,8 +78,10 @@ measured, not a claim about every rig.
   runs 620 of the 633 tests run, plus the end-to-end demo, and the released
   `.exe` is executed before upload. On 2026-08-27 it was also benchmarked on a
   real observatory capture machine against `astap_cli`: **93% vs 76% on science
-  frames, and 0 of 30 on 15-second pointing probes** -- the same completeness
-  weakness the primary rig shows on macOS, reproducing on another OS and CPU
+  frames, and 0 of 30 on 15-second pointing probes**. A control re-ran those 30
+  frames on macOS and got 0 of 30 again with the same reason code, against
+  ASTAP's 26 on both platforms -- so that gap is psolve and those frames, not
+  Windows
   ([benchmark](docs/superpowers/2026-08-27-windows-rig-benchmark.md)). psolve
   solved 5.5x faster there and failed 5x slower. **No human has used psolve on
   Windows interactively.** Note that Windows is not a peripheral target: the capture

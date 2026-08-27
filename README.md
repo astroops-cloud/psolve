@@ -90,7 +90,10 @@ the first time, driven over SSH by Claude Code, against 75 real frames with
 `astap_cli` on the same box for comparison
 ([full benchmark](docs/superpowers/2026-08-27-windows-rig-benchmark.md)). On
 science frames it solved **93% against ASTAP's 76%** and was 5.5x faster; on
-15-second pointing probes it solved **0 of 30** where ASTAP solved 26. **No
+15-second pointing probes it solved **0 of 30** where ASTAP solved 26. Those
+same 30 frames were then re-run on the macOS workstation as a control: **0 of
+30 again, same reason code, against ASTAP's 26 again** -- so the gap is a
+property of psolve and of those frames, not of Windows. **No
 human has yet used psolve on Windows interactively.**
 
 **Windows is where the drop-in replacement claim actually gets tested.** This

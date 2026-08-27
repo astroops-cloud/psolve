@@ -68,9 +68,12 @@ Where both solved (n=34): **median separation 0.698"**, p90 1.584", max 7.781".
 | max, solved | 18,742 ms | 13,049 ms |
 | median, failed | **10,001 ms** | ~2,000 ms |
 
-**psolve solves 5.5x faster and fails 5x slower.** On the workstation a
-`NO_QUAD_MATCH` costs 3.3 s; on the hardware that actually runs the observatory
-it costs **ten seconds**, with the capture software waiting. Four frames
+**psolve solves 5.5x faster and fails 5x slower.** The failure cost scales
+with the CPU and has now been measured three times on the same rung: **3.3 s**
+on the workstation at the time of the corpus run, **2.2 s** on the workstation
+today against these frames, and **10.0 s** on the capture host. It is the last
+figure that matters operationally, because that is the machine with capture
+software waiting on it. Four frames
 *solved* but took 17-19 s, so this is not only a failure-path problem: the
 expensive rungs also fire on frames that eventually succeed.
 
@@ -119,6 +122,39 @@ difficulty in general.
 Both readings point at the same fix, and it is not the matcher. The early abort
 would cut the wasted time roughly tenfold; the completeness work in
 `extract.rs` would remove the failures themselves.
+
+## Control: are the probe failures a Windows problem?
+
+Asked immediately, because "psolve fails every probe frame on Windows" invites
+exactly one wrong reading, and the benchmark as first written did not exclude
+it. The 30 probe frames were copied back to the workstation and both tools
+re-run on them there, same frames, same index.
+
+| | Windows (i3, 2C) | macOS (M5 Max, 18C) |
+|---|---|---|
+| **psolve** | 0/30, `NO_QUAD_MATCH` ×30 | **0/30, `NO_QUAD_MATCH` ×30** |
+| **ASTAP** | 26/30 | **26/30** |
+| psolve wall | 300 s | 65 s |
+| ASTAP wall | 117 s | 71 s |
+
+**Identical outcomes on both platforms** -- not similar, identical, down to the
+reason code and the count, for both tools. Only wall time differs, by roughly
+the ratio of the two CPUs.
+
+**So there is no Windows defect.** psolve solves these frames exactly as well
+on Windows as on an 18-core workstation, which is to say not at all. The
+failure is a property of psolve and of the frames, and Windows is exonerated as
+a variable.
+
+That makes this the strongest evidence yet for the completeness diagnosis: the
+same 30 frames, two operating systems, two CPU architectures, two builds from
+different toolchains (msvc and Apple clang), and the same 0/30 with the same
+reason code -- against a reference tool that gets 26/30 on both. A
+platform-specific bug could not produce that symmetry.
+
+It is also a caution about the benchmark's own framing. Measured on Windows
+alone, "0 of 30" reads as a Windows result. It is not one, and only running the
+control could establish that.
 
 ## What this confirms, independently
 
