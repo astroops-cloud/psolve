@@ -3,46 +3,108 @@
 [![ci](https://github.com/astroops-cloud/psolve/actions/workflows/ci.yml/badge.svg)](https://github.com/astroops-cloud/psolve/actions/workflows/ci.yml)
 [![licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 
+> ## ⚠️ This was vibecoded
+>
+> **Effectively none of this code was written by a human.** It was built over
+> 14 days with [Claude Code](https://claude.com/claude-code) — the Rust, the
+> tests, the documentation, all of it — directed, reviewed and measured by one
+> person who hand-wrote essentially nothing. I started it to find out what
+> vibecoding could actually do. I published it because the results surprised
+> me, not because the world needs another plate solver.
+>
+> That is the honest provenance, and it cuts both ways. Everything here is
+> measured rather than asserted — 634 tests, and every number below carries the
+> run that produced it. It also has **one observatory's worth of field use**,
+> not years of it. [How this was built](docs/how-this-was-built.md) is the full
+> story, including what the approach cost.
+
 A plate solver: FITS in, WCS out. Written in Rust, shipped as a single
 static binary, built for headless automation rather than for a GUI that
 happens to have a CLI.
 
-It exists to compete with [ASTAP](https://www.hnsky.org/astap.htm) for this
-workload — leaner, and able to say *why* a frame did not solve.
+## About ASTAP
 
-Two measurements against ASTAP, on frames ASTAP does not solve. **Every solve
-in both was checked** — against the commanded pointing, and on a sample by
-reprojecting the catalogue through the fitted WCS and measuring flux at the
-predicted star positions — rather than counted on the tool's own say-so.
+[ASTAP](https://www.hnsky.org/astap.htm) is the industry standard for this job
+and it deserves that standing. It is a complete astronomy suite — solving,
+stacking, photometry, annotation, analysis — with a GUI and a CLI, prebuilt
+all-sky star databases you can just download, SIP distortion support, and years
+of field use across thousands of setups on Windows, Linux and macOS. It solves
+the overwhelming majority of frames put in front of it, quickly and correctly.
+It is what runs the pipeline this project came out of, and it stays installed.
 
-**Frames ASTAP actually failed in production** ([the stronger
-provenance](docs/superpowers/2026-08-26-production-failure-benchmark.md)): the
-AstroOps deployment ran its 12,620-frame archive through ASTAP on the live
+psolve is not a better ASTAP. It is a **narrower** tool with a different set of
+trade-offs, and for some jobs those trade-offs are the ones you want.
+
+### What each one is good at
+
+ASTAP's own site is the authority on ASTAP; if anything in this column is
+wrong, please file an issue and I will correct it.
+
+| | ASTAP | psolve |
+|---|---|---|
+| **Scope** | Complete suite: solve, stack, photometry, annotate, analyse | Plate solving only |
+| **Interface** | GUI and CLI | CLI only, no GUI, no runtime |
+| **Star database** | Prebuilt all-sky databases, downloadable | You build it from a Gaia DR3 mirror — you pick the depth and the declination cut |
+| **Distortion** | SIP | **TAN only, no distortion terms** |
+| **Platforms** | Windows, Linux, macOS — all field-proven | Linux and macOS built *and executed* by CI; Windows built, **never executed** |
+| **Field use** | Years, thousands of setups | One observatory, one machine, 14 days |
+| **Sidecars** | `.ini` / `.wcs`, header `-update` | Byte-identical `.ini` / `.wcs`, same `-update` |
+| **Machine output** | Sidecars and exit codes | Sidecars *plus* structured JSON: WCS, star counts, per-stage timings, fit residuals |
+| **Why a frame failed** | Exit code | **11 distinct reason codes** plus per-reason star-rejection counts |
+| **Deployment** | Install the application | One static binary, no runtime, no config |
+| **Licence** | Free — see its site | MIT (a built index is CC BY-NC 3.0 IGO, and is not MIT) |
+
+**Reasons you might actually want psolve:** you are automating a pipeline and
+want a machine-readable answer rather than a parsed log; you want to know *why*
+a frame did not solve (`NO_QUAD_MATCH` vs `TOO_FEW_STARS` vs `INDEX_TOO_SHALLOW`
+vs `CANNOT_READ` are different problems with different fixes); you want one
+static binary in a container with no runtime; you want an index tuned to your
+own sky rather than an all-sky one; or you want the `-update` write path to
+refuse rather than risk your frames.
+
+**Reasons you should stay on ASTAP:** you want a GUI; you need distortion
+correction; you want a star database you can download instead of build; you are
+on Windows; you want a tool with a decade of other people having hit the bugs
+first. Any of those, and ASTAP is the right answer.
+
+psolve speaks ASTAP's own CLI grammar and writes its sidecar bytes exactly, so
+trying it costs a symlink — and going back costs the same symlink.
+
+## Where psolve does well
+
+Two measurements, and the caveat comes first because it is load-bearing:
+**both populations are frames ASTAP failed on or has no record for.** That is a
+biased sample by construction — measuring a challenger only on the incumbent's
+hardest cases flatters the challenger, and says nothing about the 10,376 frames
+ASTAP solved perfectly well, which is the actual job and which it did. These
+numbers show psolve covers some cases that fell through; they are not a
+scoreboard.
+
+**Every solve in both was checked** — against the commanded pointing, and on a
+sample by reprojecting the catalogue through the fitted WCS and measuring flux
+at the predicted star positions — rather than counted on the tool's own say-so.
+
+**Frames ASTAP failed in production** ([method](docs/superpowers/2026-08-26-production-failure-benchmark.md)):
+the AstroOps deployment ran its 12,620-frame archive through ASTAP on the live
 ingest path and parked 1,088. On a stratified 184 of those, **psolve recovers
-72 (39.1%)** — 54% of the SVBONY SV405CC frames — in **369 s total**, where
-ASTAP parked all 184 and at its 180 s cap would spend up to **9.2 hours**.
-Four of the 184 turned out to be **truncated files**, not hard frames, which
-psolve separates as `CANNOT_READ` rather than reporting as a failed solve.
+72 (39.1%)** — 54% of the SVBONY SV405CC frames — in **369 s total**. Four of
+the 184 turned out to be **truncated files** rather than hard frames, which
+psolve separates as `CANNOT_READ` instead of reporting a failed solve.
 
 **Frames ASTAP has no recorded answer for**
 ([head to head](docs/superpowers/2026-08-25-astap-head-to-head.md), both tools
 re-run): psolve solved **113 of 200, none of them wrong**; ASTAP reported 21,
-of which **two were more than 10° out while reporting `PLTSOLVD=T`**, leaving
-19 correct. Median wall 64 ms against 1,836 ms.
+of which two were more than 10° out while reporting `PLTSOLVD=T`, leaving 19
+correct. Median wall 64 ms against 1,836 ms.
 
-Those two populations are not the same claim and this file does not merge
-them: a missing solve row can mean "never attempted", while a parked frame is
-a measured failure. Full method and the corrections it forced:
-[`docs/superpowers/2026-08-25-astap-head-to-head.md`](docs/superpowers/2026-08-25-astap-head-to-head.md).
+Those two populations are not the same claim and this file does not merge them:
+a missing solve row can mean "never attempted", while a parked frame is a
+measured failure.
 
-That is not dominance in every respect and this file does not claim it.
-ASTAP still wins one frame of the 200; its `d50` database is all-sky where
-these indexes carry a declination cut; psolve fits a TAN WCS with no
-distortion terms; and ASTAP has years of field use across thousands of setups
-against one machine and one observatory here. ASTAP stays installed and keeps
-running the AstroOps pipeline; `psolve` competes with it on measured merit,
-and the switch-over (if it ever happens) is a symlink flip in both
-directions — contingent on that merit, not assumed ahead of it.
+And on the full corpus — the fair comparison, on frames ASTAP *did* solve —
+psolve agrees with ASTAP on **99.93%** of 10,376 frames to a 0.54″ median
+centre separation. Agreement, not victory: those are ASTAP's answers being
+reproduced.
 
 ```
 psolve index build --input <DIR> --out <FILE> [OPTIONS]

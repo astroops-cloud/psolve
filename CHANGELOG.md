@@ -10,6 +10,11 @@ First public release. Public history begins here; the development history that
 produced it is retained privately, which is why short SHAs cited in `docs/` do
 not resolve in this repository.
 
+**Provenance:** effectively none of this code was written by a human. It was
+built over 14 days with Claude Code, directed and reviewed by one person.
+[`docs/how-this-was-built.md`](docs/how-this-was-built.md) is the full account,
+including what the approach cost.
+
 ### Added
 
 - **A plate solver.** FITS bytes in, a verified TAN WCS out. One static binary,

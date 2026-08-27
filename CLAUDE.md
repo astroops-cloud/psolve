@@ -3,9 +3,21 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 `psolve` is a plate solver: FITS bytes in, a verified TAN WCS out. Rust, one
-static binary, no runtime, built for headless automation. It competes with
-ASTAP on measured merit and is a drop-in replacement for `astap_cli`'s CLI
-grammar and sidecar formats.
+static binary, no runtime, built for headless automation. It is a drop-in
+replacement for `astap_cli`'s CLI grammar and sidecar formats.
+
+**Framing, and it matters in anything you write here.** ASTAP is the industry
+standard for this job and deserves that standing -- a full astronomy suite,
+prebuilt all-sky databases, SIP distortion, years of field use across thousands
+of setups. psolve is a narrower tool with different trade-offs (headless, JSON
+output, reason codes, one static binary, an index tuned to one sky), not a
+better ASTAP. Both benchmark populations in the README are frames ASTAP failed
+on or has no record for, which is a **biased sample by construction** and is
+labelled as such; the fair number is the 99.93% agreement on frames ASTAP did
+solve. Do not write copy that reads as a scoreboard.
+
+This repo was written almost entirely by Claude Code over 14 days
+(`docs/how-this-was-built.md`), which the README states at the top.
 
 ## Commands
 
@@ -302,6 +314,10 @@ in a wiki. Beyond those:
   benchmark, the ASTAP head-to-heads, the pair-matching and matched-filter
   spikes, index depth, radius sensitivity. When a README claim needs checking,
   the run that produced it is one of these.
+- `docs/how-this-was-built.md` — the provenance the README leads with: what the
+  AI was good at, the five defects it produced that tests could not catch, and
+  the three habits that made them survivable. Read before writing any copy
+  comparing psolve to ASTAP.
 - `docs/astap-compat.md` — flag-by-flag compatibility, sidecar bytes, exit codes,
   `-update` model, and the M3 agreement/timing measurements.
 - `docs/index-building.md` + `scripts/fetch-gaia.sh` — Gaia DR3 mirror and
