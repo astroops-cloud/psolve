@@ -61,7 +61,7 @@ wrong, please file an issue and I will correct it.
 | **Scope** | Complete suite: solve, stack, photometry, annotate, analyse | Plate solving only |
 | **Interface** | GUI and CLI | CLI only, no GUI, no runtime |
 | **Star database** | Prebuilt all-sky databases, downloadable | You [build it yourself](docs/index-building.md#which-depth-do-you-need-start-here) from a Gaia DR3 mirror — you pick the depth and the declination cut |
-| **Distortion** | SIP | **TAN only, no distortion terms** |
+| **Distortion** | SIP | **TAN only, no distortion terms** ([measured: this data wants one](docs/superpowers/2026-08-27-distortion-signal.md)) |
 | **Platforms** | Windows, Linux, macOS — all field-proven | Linux, macOS **and Windows** all built and tested by CI; but **no human has run the Windows or Linux build** |
 | **Field use** | Years, thousands of setups | One observatory, one machine, 14 days |
 | **Sidecars** | `.ini` / `.wcs`, header `-update` | Byte-identical `.ini` / `.wcs`, same `-update` |

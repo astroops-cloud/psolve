@@ -67,7 +67,13 @@ measured, not a claim about every rig.
 
 ### Known limits
 
-- Fits a TAN WCS with no distortion terms.
+- Fits a TAN WCS with no distortion terms, and `-sip` is accepted but
+  discarded. Measured 2026-08-27 across 74 frames from three cameras: every one
+  shows a positive residual-vs-radius correlation, and one camera shows it on
+  27 of 27 frames -- so this is a real gap rather than a theoretical one. It
+  affects the *accuracy* of solves that already succeed, not whether they
+  succeed. See
+  [`docs/superpowers/2026-08-27-distortion-signal.md`](docs/superpowers/2026-08-27-distortion-signal.md).
 - **Nobody has used psolve on Windows.** CI builds it natively there and runs
   620 of the 634 tests plus the end-to-end demo, and the released `.exe` is
   executed before upload -- but no human has installed it on a Windows machine
