@@ -18,7 +18,7 @@
 > honest warning even if a human had typed every line.
 >
 > The provenance cuts both ways too. Everything here is measured rather than
-> asserted — 634 tests, and every number below carries the run that produced
+> asserted — 633 tests run plus 2 ignored, and every number below carries the run that produced
 > it, including the ones that were wrong and got retracted.
 > [How this was built](docs/how-this-was-built.md) is the full story, including
 > what the approach cost.
@@ -73,8 +73,8 @@ wrong, please file an issue and I will correct it.
 ### Nobody has actually used psolve on Windows
 
 As of 2026-08-27 CI builds psolve natively on `windows-latest` and runs **620
-of the 634 tests** there (the 14 skipped are Unix-only symlink and permission
-cases), plus the end-to-end synthetic demo, which solves. The released `.exe`
+of the 633 tests run** there (the 13 not run are Unix-only symlink and
+permission cases), plus the end-to-end synthetic demo, which solves. The released `.exe`
 is built on that same runner and executed before upload -- it is no longer a
 cross-compiled binary nobody ever ran.
 

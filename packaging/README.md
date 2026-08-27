@@ -18,9 +18,9 @@ success), which is where every artifact below actually came from:
 | macOS arm64 | bare binary | 963,680 B | **yes** -- `psolve --version` |
 | Windows x86_64 | `.zip` of `psolve.exe` | built natively on `windows-latest` | **yes** -- `psolve --version` before upload |
 
-Windows coverage, measured on the `ci` run of 2026-08-27: **620 of the 634
-tests pass** on `windows-latest` (the 14 not run are `#[cfg(unix)]` symlink and
-permission cases), the synthetic demo solves end to end, and the job takes
+Windows coverage, measured on the `ci` run of 2026-08-27: **620 of the 633
+tests run pass** on `windows-latest` (the 13 not run are `#[cfg(unix)]` symlink
+and permission cases), the synthetic demo solves end to end, and the job takes
 3m53s. The `-update` safety model is still weaker there --
 `fits_update::same_directory` returns `None` unconditionally, so one of the
 three `.psolve-readonly` ancestor chains is unavailable. **And no human has

@@ -141,8 +141,8 @@ jobs:
             - Linux and macOS binaries -- built and executed by CI. The full
               test suite also runs on both platforms on every push.
             - Windows `.exe` -- built natively on a Windows runner and
-              executed by CI, which also runs 620 of the 634 tests there (the
-              14 skipped are Unix-only symlink and permission cases). **No
+              executed by CI, which also runs 620 of the 633 tests there (the
+              13 not run are Unix-only symlink and permission cases). **No
               human has used psolve on Windows**, though: the author does not
               run Windows, and every real frame this project has solved was
               solved on macOS. It also has a weaker `-update` safety model

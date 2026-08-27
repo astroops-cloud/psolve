@@ -22,7 +22,7 @@ This repo was written almost entirely by Claude Code over 14 days
 ## Commands
 
 ```sh
-cargo test --workspace                 # full suite (634 tests, ~3 min cold; all pass, clippy clean)
+cargo test --workspace                 # 633 run + 2 ignored, ~3 min cold; all pass, clippy clean
 cargo test -p psolve-cli --test blind_solve            # one test file
 cargo test -p psolve-core no_filesystem                # one test target by name filter
 cargo test -- --ignored --nocapture                    # the slow real-index/measurement tests
@@ -264,7 +264,7 @@ installed binary), the Linux and macOS bare binaries are built **and run**, and
 and the Windows `.exe` is built **natively on `windows-latest` and executed**
 since 2026-08-27 (it was previously cross-compiled with mingw-w64 and never
 run). `ci.yml` runs the whole suite and the demo on all three platforms every
-push: 620 of 634 tests pass on Windows, the 14 gaps being `#[cfg(unix)]`
+push: 620 of the 633 run pass on Windows, the 13 gaps being `#[cfg(unix)]`
 symlink and permission tests. **No human has run psolve on Windows** — CI is
 the only thing that has, and that distinction belongs in any copy you write. `packaging/homebrew/psolve.rb`
 still carries a deliberately invalid `sha256` so it refuses to install rather

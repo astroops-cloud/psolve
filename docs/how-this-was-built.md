@@ -85,7 +85,7 @@ than quietly edited, which is why you can still read all of them.
 
 **A fix that passes every test and is still wrong.** There is a branch here
 fixing a real defect — colour frames that the camera already binned get binned
-again in software, halving resolution for nothing. It passes all 634 tests. It
+again in software, halving resolution for nothing. It passes every one of the 633 tests that run. It
 also regressed 184 real frames when measured, because an unrelated extraction
 threshold had silently tuned itself around the bug. It is documented as a known
 limit and deliberately not merged.
@@ -132,7 +132,7 @@ it is honest about what does not work.
 
 Two items moved off that first list on 2026-08-27 and it is worth saying which,
 because the list was written when they were true: **Windows** is now built
-natively and tested by CI on every push (620 of 634 tests; no human has run it),
+natively and tested by CI on every push (620 of the 633 run; no human has run it),
 and **a prebuilt all-sky index is downloadable** from the release rather than
 something you must build. Distortion is the one that has not moved.
 

@@ -75,7 +75,7 @@ measured, not a claim about every rig.
   succeed. See
   [`docs/superpowers/2026-08-27-distortion-signal.md`](docs/superpowers/2026-08-27-distortion-signal.md).
 - **Nobody has used psolve on Windows.** CI builds it natively there and runs
-  620 of the 634 tests plus the end-to-end demo, and the released `.exe` is
+  620 of the 633 tests run, plus the end-to-end demo, and the released `.exe` is
   executed before upload -- but no human has installed it on a Windows machine
   or pointed it at a real frame. The author does not use Windows. Every real
   frame this project has solved was solved on macOS.
