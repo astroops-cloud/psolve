@@ -86,8 +86,16 @@ is built on that same runner and executed before upload -- it is no longer a
 cross-compiled binary nobody ever ran.
 
 That is the entire extent of it. **No human has installed psolve on a Windows
-machine, pointed it at a real frame, or run it during an imaging session.** The
-author does not use Windows.
+machine, pointed it at a real frame, or run it during an imaging session** --
+though that is about to change, and Windows matters here more than the ordering
+of this section suggests.
+
+**Windows is where the drop-in replacement claim actually gets tested.** This
+project's ASTAP-compatible mode exists so that capture software can call psolve
+instead of `astap_cli` mid-sequence, and that software -- N.I.N.A. in this
+deployment -- runs on a Windows mini-PC bolted to the telescope. The Linux and
+macOS builds are where psolve is *developed*; the Windows build is where it
+would actually do the job it was written for.
 
 The same caveat applies more weakly to Linux: CI tests it, but every real frame
 this project has ever solved was solved on macOS. Machine-verified and

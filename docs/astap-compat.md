@@ -304,6 +304,39 @@ a mounted share):
   components, and verifies (by device+inode, never by string) as actually
   naming the current directory. Otherwise this chain is simply omitted.
 
+### What this means on Windows, where the capture machine actually runs
+
+`fits_update::same_directory` compares by device+inode, for which `std` has no
+portable API off Unix, so on Windows it returns `None` unconditionally and the
+**logical-lexical chain is never available there**. That is a real difference
+and it is shipped deliberately.
+
+It is also, in the deployment that matters, **a difference that does not
+bite** -- and the reason is worth stating so nobody either panics about it or
+relies on the chain elsewhere. The logical-lexical chain needs `$PWD` set,
+absolute and corroborated. `$PWD` is a *shell* convention: it is unset under
+any launcher that is not a shell. **N.I.N.A. is not a shell**, and neither is
+a Windows service or a scheduled task. So in a capture-software deployment the
+logical-lexical chain is unavailable on Linux and macOS too, for a different
+reason.
+
+What still protects a tree on Windows, unchanged:
+
+- `PSOLVE_READONLY` set to any non-empty value -- refuses every write.
+- A `.psolve-readonly` marker on the **canonical** ancestor chain. This is the
+  guarantee, and it is platform-independent.
+- The same marker on the physical-lexical chain.
+- The whole write path: full temp copy, `fsync`, reparse from a fresh read,
+  require byte-identical pixels, then `rename`; refuse rather than shift when
+  the header would need another 2880-byte block; refuse a target with no write
+  bits.
+
+**Practical advice for a Windows capture machine:** put the marker in the tree
+the frames physically live in, which is the canonical chain and works
+everywhere. The chain Windows lacks only ever covered the case of a *relative
+path invoked from inside a symlinked working directory* -- which is not how
+capture software invokes a plate solver.
+
 The reason a third chain exists at all: no operating system records a
 *logical* working directory — `getcwd(3)`, which both `canonicalize` and
 the physical-lexical chain are built on, returns the kernel's physical,
