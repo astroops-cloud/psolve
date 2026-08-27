@@ -190,3 +190,18 @@ architectural property is measured here rather than asserted.
 failures are **72 `TOO_FEW_STARS`** (which fail in ~50 ms) and 15
 `NO_QUAD_MATCH` (which pay the full ladder). ASTAP over the same run: median
 1,836 ms, max 163.1 s, total 985.4 s.
+
+> **Which run is which.** These are NOT the figures in the summary table above,
+> and the difference is a separate re-run rather than a correction. The table
+> reports `c91cd0a` (psolve 62 ms, ASTAP 1,826 ms / 975.3 s); this section
+> reports `0579c33` (psolve 64 ms, ASTAP 1,836 ms / 985.4 s). Neither
+> supersedes the other. Flagged 2026-08-27 after a review found the README
+> quoting one pair in one section and the other pair in another, with nothing
+> saying they came from different runs.
+>
+> **And neither pair is a speed comparison.** psolve's median is over the
+> frames it SOLVED; ASTAP's is over all 200, of which ~180 were not correct
+> solves, so it is dominated by the cost of a search giving up -- its 160.6 s
+> max is an exhausted search. Right numbers, different populations. The
+> like-for-like basis is the 18 frames both tools solved, which is too small to
+> carry a claim.

@@ -12,11 +12,16 @@
 > vibecoding could actually do. I published it because the results surprised
 > me, not because the world needs another plate solver.
 >
-> That is the honest provenance, and it cuts both ways. Everything here is
-> measured rather than asserted — 634 tests, and every number below carries the
-> run that produced it. It also has **one observatory's worth of field use**,
-> not years of it. [How this was built](docs/how-this-was-built.md) is the full
-> story, including what the approach cost.
+> **The operative risk is not who wrote it.** It is that psolve has *fourteen
+> days, one observatory and one operator* of real use behind it. Every frame it
+> has ever solved in anger came from one rig under one sky. That would be the
+> honest warning even if a human had typed every line.
+>
+> The provenance cuts both ways too. Everything here is measured rather than
+> asserted — 634 tests, and every number below carries the run that produced
+> it, including the ones that were wrong and got retracted.
+> [How this was built](docs/how-this-was-built.md) is the full story, including
+> what the approach cost.
 
 A plate solver: FITS in, WCS out. Written in Rust, shipped as a single
 static binary, built for headless automation rather than for a GUI that
@@ -52,7 +57,7 @@ wrong, please file an issue and I will correct it.
 | **Machine output** | Sidecars and exit codes | Sidecars *plus* structured JSON: WCS, star counts, per-stage timings, fit residuals |
 | **Why a frame failed** | Exit code | **11 distinct reason codes** plus per-reason star-rejection counts |
 | **Deployment** | Install the application | One static binary, no runtime, no config |
-| **Licence** | Free — see its site | MIT (a built index is CC BY-NC 3.0 IGO, and is not MIT) |
+| **Licence** | **MPL 2.0** | MIT (a built index is CC BY-NC 3.0 IGO, and is not MIT) |
 
 ### Nobody has actually used psolve on Windows
 
@@ -114,8 +119,17 @@ psolve separates as `CANNOT_READ` instead of reporting a failed solve.
 **Frames ASTAP has no recorded answer for**
 ([head to head](docs/superpowers/2026-08-25-astap-head-to-head.md), both tools
 re-run): psolve solved **113 of 200, none of them wrong**; ASTAP reported 21,
-of which two were more than 10° out while reporting `PLTSOLVD=T`, leaving 19
-correct. Median wall 64 ms against 1,836 ms.
+of which **two** were more than 10° out while reporting `PLTSOLVD=T`, leaving
+19 correct.
+
+Two of twenty-one is a small number and is quoted as an observed instance, not
+as a characterisation of ASTAP's reliability -- on the 10,376 frames it solved
+in production it is the thing psolve is checked *against*. It is noted at all
+because a confidently wrong answer is worse than a refusal, which is this
+project's own thesis and applies to it equally.
+
+**Deliberately no speed ratio here.** See below for why the obvious one is
+misleading.
 
 Those two populations are not the same claim and this file does not merge them:
 a missing solve row can mean "never attempted", while a parked frame is a
@@ -295,10 +309,33 @@ one of the 790 newly solving frames is 2×2-binned; not one previously
 solving frame changed, byte for byte.
 
 Timing across the **whole corpus**, not one frame: solver total **50.4 ms
-median** as of 2026-08-25, down from 64.4 ms before that day's grid
-neighbour search. Against ASTAP over the 200-frame head-to-head above,
-process wall: **62 ms median against 1,826 ms**, and 149 s against 975 s in
-total.
+median** as of 2026-08-25, down from 64.4 ms before that day's grid neighbour
+search. **That is the honest speed number for this project** -- it is measured
+over 10,376 frames that solve.
+
+**The head-to-head medians are not a like-for-like speed comparison, and this
+file will not present them as one.** Over that 200-frame set the raw figures
+are psolve 62 ms against ASTAP 1,826 ms, 149 s against 975 s in total. But
+those two medians are taken over different populations:
+
+- psolve's 62 ms is the median of the **96 frames it solved**. Its failures are
+  broken out separately in the source document -- `TOO_FEW_STARS` at 51 ms,
+  `NO_QUAD_MATCH` at 3,286 ms.
+- ASTAP's 1,826 ms is the median over **all 200**, of which 181 were not correct
+  solves. On a set chosen because ASTAP has no answer for it, that median is
+  mostly **the cost of a search giving up** -- its max on the run is 160.6
+  seconds, which is an exhausted search, not a solve.
+
+Comparing a solved-only median against an everything-included median and
+calling the ratio "speed" is the same right-number-wrong-population error this
+project has already had to retract once. The frames both tools solved are the
+only fair basis, and n=18 is too small to claim much from.
+
+Two different re-runs are quoted across this file, and they are not the same
+measurement: **62 ms / 1,826 ms / 975.3 s at `c91cd0a`**, and **64 ms /
+1,836 ms / 985.4 s at `0579c33`**. Both are in
+[the head-to-head document](docs/superpowers/2026-08-25-astap-head-to-head.md);
+neither supersedes the other, they are separate runs of the same 200 frames.
 
 One caveat this file states rather than buries: the pair-matching retry made
 *failure* more expensive. A `NO_QUAD_MATCH` cost ~70 ms before it existed and
