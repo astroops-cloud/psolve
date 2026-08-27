@@ -78,6 +78,48 @@ That moves the pair-matching early abort
 (`2026-08-25-astap-head-to-head.md`, "the fix is an early abort") from a
 performance nicety to something with operational consequence.
 
+## The operational consequence: it is the failure cost, not the solve rate
+
+The solve rate is the interesting number. **The failure cost is the one an
+operator would feel**, and it was sitting in the data above unmultiplied until
+a review pointed at it.
+
+Measured, from this run's own rows:
+
+| | psolve | ASTAP |
+|---|---:|---:|
+| the 30 probe frames, total wall | **299.7 s (5.0 min)** | 117.3 s |
+| ...outcome | **0 solved** | 26 solved |
+| the 45 science frames, psolve total | 71.0 s for 42 solves | — |
+
+**psolve spends five minutes failing to solve the probe frames that ASTAP
+handles in under two, and solves 42 science frames in seventy seconds.**
+
+Scale matters here and the earlier framing of this was wrong in a way worth
+correcting: a **single pointing run fires 3 probes**, so putting psolve first
+costs about **30 seconds** of dead time per run. The 30 probes measured here
+are not a sample -- they are the *complete* 2026-08-24 pointing-model build, 10
+runs of 3. So a full pointing-model build costs **5 minutes** of blocked
+sequence before ASTAP is reached at all.
+
+### Which implies invocation order is a decision, not a preference
+
+- **psolve first:** ~30 s wasted per pointing run, ~5 min per model build, and
+  ASTAP solves them afterwards regardless.
+- **ASTAP first:** costs nothing extra on probes, and psolve still catches the
+  science frames ASTAP parks -- which is the 93%-vs-76% result, and the actual
+  case for running psolve at all.
+
+That decision is the operator's, not this document's. What the document can say
+is that **0 of 30 is a capability gap, not a tuning problem**: a solver that
+handles 93% of science frames and 0% of probes is failing on a *property of
+those frames* -- too few detected stars in a 15-second exposure -- not on
+difficulty in general.
+
+Both readings point at the same fix, and it is not the matcher. The early abort
+would cut the wasted time roughly tenfold; the completeness work in
+`extract.rs` would remove the failures themselves.
+
 ## What this confirms, independently
 
 psolve failing **0 of 30** probe frames is the ATR585M completeness problem

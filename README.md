@@ -195,7 +195,9 @@ one.
 **Download a prebuilt one.** The [v0.1.0 release](https://github.com/astroops-cloud/psolve/releases/tag/v0.1.0)
 carries an all-sky G≤14 pair -- `.psidx` (257 MB) for hinted solving and
 `.psqidx` (428 MB) if you also want blind solving. Verify with the published
-`SHA256SUMS`. **These files are NOT MIT**: they are derived from Gaia DR3 and
+`SHA256SUMS` -- those digests have been checked after transfer to a second
+machine on a different OS and CPU architecture, so a mismatch means a damaged
+download, not a flaky checksum. **These files are NOT MIT**: they are derived from Gaia DR3 and
 are CC BY-NC 3.0 IGO -- non-commercial, attribution required. `INDEX-LICENCE.txt`
 ships beside them and [`docs/data-licence.md`](docs/data-licence.md) explains
 what that constrains.

@@ -134,6 +134,12 @@ jobs:
             INDEX-LICENCE.txt and docs/data-licence.md. The MIT licence covers
             the binaries, not the data.
 
+            **Verify what you download:** `shasum -a 256 -c SHA256SUMS`. Those
+            digests are not a formality -- the 0.72 GB index pair has been
+            checked byte-for-byte after transfer to a second machine running a
+            different operating system and CPU architecture, so a mismatch
+            means a damaged download rather than an unreliable checksum.
+
             **What was verified, and what was not:**
 
             - `.deb` -- built, installed with `dpkg -i`, and the installed
