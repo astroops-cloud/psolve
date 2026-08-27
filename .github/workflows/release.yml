@@ -122,10 +122,17 @@ jobs:
           body: |
             See CHANGELOG.md for what is in this release, including its known limits.
 
-            **psolve needs a star index and none ships here.** Build one from a
-            Gaia DR3 mirror with `psolve index build` -- see docs/index-building.md.
-            An index is CC BY-NC 3.0 IGO, which this project's MIT licence does
-            not cover.
+            **psolve needs a star index.** A prebuilt all-sky G<=14 pair may be
+            attached to this release (`.psidx`, plus `.psqidx` for blind
+            solving) -- check the asset list. Otherwise build one from a Gaia
+            DR3 mirror with `psolve index build`; docs/index-building.md's
+            "Which depth do you need" answers which depth from your field of
+            view.
+
+            **Any index file here is NOT MIT.** Derived from Gaia DR3, it is
+            CC BY-NC 3.0 IGO -- non-commercial, attribution required. See
+            INDEX-LICENCE.txt and docs/data-licence.md. The MIT licence covers
+            the binaries, not the data.
 
             **What was verified, and what was not:**
 

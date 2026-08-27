@@ -36,10 +36,15 @@ including what the approach cost.
   matched-filter re-extraction, pair matching, tight search radius -- ordered so
   that a frame which solves today does not change its answer or even its route.
 - **`psolve index build`** from a Gaia DR3 mirror
-  ([`docs/index-building.md`](docs/index-building.md)). No index ships with the
-  binary: one is derived from Gaia DR3 and is CC BY-NC 3.0 IGO, which this
-  project's MIT licence does not cover
-  ([`docs/data-licence.md`](docs/data-licence.md)).
+  ([`docs/index-building.md`](docs/index-building.md)), and a **prebuilt
+  all-sky G≤14 index attached to this release** -- `.psidx` (257 MB) plus the
+  paired `.psqidx` (428 MB) for blind solving, verified against the published
+  `SHA256SUMS`. **The index files are not MIT**: derived from Gaia DR3, they
+  are CC BY-NC 3.0 IGO -- non-commercial, attribution required
+  ([`docs/data-licence.md`](docs/data-licence.md), and `INDEX-LICENCE.txt`
+  ships alongside them). Narrow fields need a deeper index you build yourself;
+  [which depth do you need](docs/index-building.md#which-depth-do-you-need-start-here)
+  answers that from your field of view.
 - **`scripts/demo.sh`** -- a complete solve on synthetic data with no index, no
   download and no network.
 - **An `-update` safety model**: default off, two independent read-only

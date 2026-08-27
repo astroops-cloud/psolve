@@ -146,16 +146,25 @@ solves it:
 
 It prints the solve JSON and exits non-zero if the frame did not solve.
 
-**Solving your own frames needs a real index, and you build it yourself.**
-Start with **[which depth do you need](docs/index-building.md#which-depth-do-you-need-start-here)**,
-which answers that from your field of view rather than leaving you to guess;
-[`docs/index-building.md`](docs/index-building.md) then has the whole
-procedure. An all-sky G≤14 index is 0.27 GB and builds in seconds -- the slow
-part is fetching the Gaia mirror, which is done once and is why the demo does
-not use a real index.
+**Solving your own frames needs a real star index.** There are two ways to get
+one.
 
-A built index is also CC BY-NC 3.0 IGO rather than MIT
-([`docs/data-licence.md`](docs/data-licence.md)), which is why none ships here.
+**Download a prebuilt one.** The [v0.1.0 release](https://github.com/astroops-cloud/psolve/releases/tag/v0.1.0)
+carries an all-sky G≤14 pair -- `.psidx` (257 MB) for hinted solving and
+`.psqidx` (428 MB) if you also want blind solving. Verify with the published
+`SHA256SUMS`. **These files are NOT MIT**: they are derived from Gaia DR3 and
+are CC BY-NC 3.0 IGO -- non-commercial, attribution required. `INDEX-LICENCE.txt`
+ships beside them and [`docs/data-licence.md`](docs/data-licence.md) explains
+what that constrains.
+
+**Or build your own**, which you will want if your fields are narrow -- G≤14
+returns as few as 3 stars on a 0.25° field in sparse sky, which is a refusal
+rather than a solve. Start with
+**[which depth do you need](docs/index-building.md#which-depth-do-you-need-start-here)**,
+which answers that from your field of view;
+[`docs/index-building.md`](docs/index-building.md) has the whole procedure.
+Building is seconds once the Gaia mirror is on disk -- fetching that mirror is
+the slow part, and is why the demo uses synthetic data instead.
 
 ## Drop-in replacement for `astap_cli`
 
