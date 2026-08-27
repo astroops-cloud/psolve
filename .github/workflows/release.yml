@@ -29,7 +29,7 @@ jobs:
             asset: psolve-macos-arm64
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # A release binary that has never run is not a release binary. This is
       # the same reason the .deb job installs its own artifact.

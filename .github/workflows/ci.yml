@@ -35,7 +35,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: cargo clippy --workspace --all-targets -- -D warnings
 
   test:
@@ -45,7 +45,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Reason 1 above. If this ever prints 0, the suite is running as root and
       # fits_update.rs's fsync-failure test cannot do its job.
@@ -67,7 +67,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: cargo build --release
       - uses: actions/upload-artifact@v4
         with:
