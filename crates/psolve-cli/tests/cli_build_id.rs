@@ -25,7 +25,7 @@ fn bin() -> std::path::PathBuf {
     if p.ends_with("deps") {
         p.pop();
     }
-    p.join("psolve")
+    p.join(format!("psolve{}", std::env::consts::EXE_SUFFIX))
 }
 
 fn tmpdir(tag: &str) -> std::path::PathBuf {
@@ -88,7 +88,7 @@ fn build_no_git_binary(manifest_dir: &Path) -> std::path::PathBuf {
         String::from_utf8_lossy(&o.stdout),
         String::from_utf8_lossy(&o.stderr)
     );
-    target_dir.join("debug").join("psolve")
+    target_dir.join("debug").join(format!("psolve{}", std::env::consts::EXE_SUFFIX))
 }
 
 /// Minimal valid FITS with no stars -- copied verbatim from `cli_solve.rs`

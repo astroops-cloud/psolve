@@ -43,7 +43,7 @@ fn bin() -> PathBuf {
     if p.ends_with("deps") {
         p.pop();
     }
-    p.join("psolve")
+    p.join(format!("psolve{}", std::env::consts::EXE_SUFFIX))
 }
 
 struct ScratchDir(PathBuf);

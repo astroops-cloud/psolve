@@ -29,7 +29,7 @@ fn bin() -> std::path::PathBuf {
     if p.ends_with("deps") {
         p.pop();
     }
-    p.join("psolve")
+    p.join(format!("psolve{}", std::env::consts::EXE_SUFFIX))
 }
 
 /// Pull `"field":{"center":{"ra":..,"dec":..}` out of the JSON without a JSON
