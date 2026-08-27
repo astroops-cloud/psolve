@@ -18,7 +18,14 @@ industry standard for this job and it earned that. It is a complete astronomy
 suite where this is one narrow tool; it ships all-sky databases where this makes
 you build your own; it handles distortion where this fits a plain TAN; it has a
 decade of other people having hit the bugs first, where this has one
-observatory and a fortnight. It runs my pipeline and it stays installed.
+observatory and a fortnight. It has run my pipeline since that pipeline
+existed, and it stays installed.
+
+psolve is now going in beside it -- I am eating my own dogfood, as of
+2026-08-27. Beside it, not instead of it: my own last per-rig measurement has
+psolve losing on my primary camera, and the improvements that landed afterwards
+have not been measured against that split. Running it in production is how I
+find out whether it holds up; it is not a claim that it already has.
 
 The comparisons in the README are on frames ASTAP **failed** on or has no
 record for. That is a biased sample by construction, and it is labelled as one.
@@ -112,15 +119,22 @@ survivable.
 
 ## Should you use this?
 
-If you want a GUI, distortion correction, a database you can download, Windows
-support, or a decade of field-tested reliability — use ASTAP. It is genuinely
-excellent at all of those.
+If you want a GUI, **distortion correction**, or a decade of field-tested
+reliability across thousands of setups — use ASTAP. It is genuinely excellent at
+all of those, and the distortion gap is real: psolve fits a plain TAN with no
+distortion terms and accepts `-sip` only to ignore it.
 
 If you are automating a pipeline and want structured JSON, a reason code
 explaining *why* a frame did not solve, one static binary with no runtime, or a
 star index tuned to your own sky, then this may suit you, and it is MIT
 licensed. Read [CHANGELOG.md](../CHANGELOG.md)'s known-limits section first —
 it is honest about what does not work.
+
+Two items moved off that first list on 2026-08-27 and it is worth saying which,
+because the list was written when they were true: **Windows** is now built
+natively and tested by CI on every push (620 of 634 tests; no human has run it),
+and **a prebuilt all-sky index is downloadable** from the release rather than
+something you must build. Distortion is the one that has not moved.
 
 Either way, keep a backup of your frames. That advice has nothing to do with who
 or what wrote the code.

@@ -35,7 +35,18 @@ stacking, photometry, annotation, analysis — with a GUI and a CLI, prebuilt
 all-sky star databases you can just download, SIP distortion support, and years
 of field use across thousands of setups on Windows, Linux and macOS. It solves
 the overwhelming majority of frames put in front of it, quickly and correctly.
-It is what runs the pipeline this project came out of, and it stays installed.
+It has run the pipeline this project came out of since that pipeline existed,
+and it stays installed.
+
+As of 2026-08-27 psolve is going into that same pipeline **alongside** it --
+the author eating his own dogfood. Not as a replacement: the last per-rig
+measurement (2026-08-23) had psolve winning by a wide margin on one camera,
+level on another, and **losing on the primary instrument**, for a diagnosed
+reason ([a completeness⁴
+problem](docs/superpowers/2026-08-24-atr585m-diagnostic.md)). Three solver
+improvements landed after that measurement and it has not been re-run, so the
+honest status is *unknown*, not *fixed*. Both tools file their answers
+independently and ASTAP remains the one the pipeline trusts.
 
 psolve is not a better ASTAP. It is a **narrower** tool with a different set of
 trade-offs, and for some jobs those trade-offs are the ones you want.
